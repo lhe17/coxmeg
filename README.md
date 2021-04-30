@@ -29,7 +29,7 @@ The current version provides five functions.
 -   `coxmeg_m`: Perform a GWAS using a genotype matrix.
 -   `coxmeg_plink`: Perform a GWAS using plink files.
 -   `coxmeg_gds`: Perform a GWAS using a GDS file. Read more details
-    [here](../doc/coxmeg_gds_example.html).
+    [here](./coxmeg_gds_example.md).
 -   `fit_ppl`: Estimate hazard ratios (HRs) given a variance component.
 
 Fit a Cox mixed-effects model with a sparse relatedness matrix
@@ -105,7 +105,7 @@ set `type='bd'` because the relatedness matrix is a block-diagonal
 matrix. Note that `type='bd'` should be used only for a block-diagonal
 matrix or a sparse matrix of which its inverse matrix is also highly
 sparse. A sparse kinship matrix can be converted to a block-diagonal
-matrix using [kingToMatrix](../doc/coxmeg_gds_example.html). For a
+matrix using [kingToMatrix](./coxmeg_gds_example.md). For a
 general sparse relatedness matrix of which its inverse is not sparse, it
 is recommended that `type='sparse'` be used. When `type='sparse'` is
 specified, the relatedness matrix will not be inverted during the
