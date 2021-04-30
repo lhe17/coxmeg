@@ -463,16 +463,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <pre><code>## The variance component is estimated. Start analyzing SNPs...</code></pre>
 <pre><code>## # of selected samples: 87
 ## # of selected variants: 3</code></pre>
-<pre><code>## The order is set to be 1.</code></pre>
+<pre><code>## The order is set to be 2.</code></pre>
 <div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" title="1"><span class="kw">head</span>(re<span class="op">$</span>summary)</a></code></pre></div>
 <pre><code>##    snp.id chromosome  position allele      afreq  afreq_inc index       beta
-## 9       9          1  34435767    G/A 0.85555556 0.85057471     9 -0.4738568
-## 56     56          1  89618740    C/T 0.90000000 0.89655172    56  0.6003388
-## 93     93          1 114749804    A/G 0.09444444 0.09770115    93  0.9905078
+## 9       9          1  34435767    G/A 0.85555556 0.85057471     9 -0.4738578
+## 56     56          1  89618740    C/T 0.90000000 0.89655172    56  0.6003386
+## 93     93          1 114749804    A/G 0.09444444 0.09770115    93  0.9905076
 ##           HR   sd_beta           p
-## 9  0.6225964 0.3507227 0.176667614
-## 56 1.8227362 0.4425658 0.174941331
-## 93 2.6926013 0.3786088 0.008892029</code></pre>
+## 9  0.6225958 0.3507818 0.176739691
+## 56 1.8227359 0.4426871 0.175059724
+## 93 2.6926010 0.3786899 0.008906643</code></pre>
 <div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" title="1"><span class="kw">seqClose</span>(seq)</a></code></pre></div>
 <p>In this vignette we presented two examples, each using a different GDS file type and method of creating a random effects matrix. We note that the choice of random effects matrix in each case was arbitrary; and either method of generating the matrix would work with either GDS file type.</p>
 <p>The code in <code>coxmeg_gds</code> is very similar to the code in <code>coxmeg_plink</code>, as the latter function converts the plink file to GDS before reading genotypes. <code>coxmeg_gds</code> takes R objects as arguments for phenotypes, covariates, and a connection to the GDS file; while <code>coxmeg_plink</code> takes paths to files on disk. If the user intends to utilize any other functions requiring a GDS object, or to run multiple analyses on the same dataset, it will be more efficient to convert a plink file to GDS first with the SNPRelate function <code>snpgdsBED2GDS</code> (or the SeqArray function <code>seqBED2GDS</code>), then use <code>coxmeg_gds</code> instead of <code>coxmeg_plink</code>.</p>

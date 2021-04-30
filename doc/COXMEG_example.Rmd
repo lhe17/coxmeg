@@ -18,6 +18,7 @@ vignette: >
 # write.bibtex(file="references.bib")
 ```
 
+# coxmeg 1.0.13
 
 ## Overview
 

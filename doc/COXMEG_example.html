@@ -305,6 +305,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
+<div id="coxmeg-1.0.13" class="section level1">
+<h1>coxmeg 1.0.13</h1>
 <div id="overview" class="section level2">
 <h2>Overview</h2>
 <p>Time-to-event is one of the most important phenotypes in genetic epidemiology. The R-package, “coxmeg”, provides a set of utilities to fit a Cox mixed-effects model and to efficiently perform genome-wide association analysis of time-to-event phenotypes using a Cox mixed-effects model. More details can be found in <span class="citation">(He and Kulminski 2020)</span>.</p>
@@ -361,13 +363,13 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb10-8" title="8">ycen &lt;-<span class="st"> </span><span class="kw">pmin</span>(y, cen)</a>
 <a class="sourceLine" id="cb10-9" title="9">outcome &lt;-<span class="st"> </span><span class="kw">cbind</span>(ycen,<span class="kw">as.numeric</span>(y <span class="op">&lt;=</span><span class="st"> </span>cen))</a>
 <a class="sourceLine" id="cb10-10" title="10"><span class="kw">head</span>(outcome)</a></code></pre></div>
-<pre><code>##             ycen  
-## [1,] 6.665440971 1
-## [2,] 4.455192764 0
-## [3,] 0.001936548 1
-## [4,] 0.181430311 1
-## [5,] 4.457114223 1
-## [6,] 0.668475699 1</code></pre>
+<pre><code>##           ycen  
+## [1,] 0.0122328 1
+## [2,] 1.4279519 1
+## [3,] 0.3976839 1
+## [4,] 0.8355704 1
+## [5,] 1.4860475 1
+## [6,] 5.5741868 1</code></pre>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">sigma[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>]</a></code></pre></div>
 <pre><code>## 5 x 5 sparse Matrix of class &quot;dgCMatrix&quot;
 ##                         
@@ -386,22 +388,22 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <pre><code>## Solver: Cholesky decomposition (RcppEigen=TRUE).</code></pre>
 <div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" title="1">re</a></code></pre></div>
 <pre><code>## $beta
-## [1] 0.07007692
+## [1] 0.1328832
 ## 
 ## $HR
-## [1] 1.072591
+## [1] 1.142117
 ## 
 ## $sd_beta
-## [1] 0.03438159
+## [1] 0.03839601
 ## 
 ## $p
-## [1] 0.04152887
+## [1] 0.0005384537
 ## 
 ## $tau
-## [1] 0.1412672
+## [1] 0.1323803
 ## 
 ## $iter
-## [1] 17
+## [1] 16
 ## 
 ## $rank
 ## [1] 1000
@@ -410,7 +412,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## [1] 1000
 ## 
 ## $int_ll
-## [1] 11488.32</code></pre>
+## [1] 11544.91</code></pre>
 <p>In the above result, <code>tau</code> is the estimated variance component, and <code>int_ll</code> is -2*log(lik) of the integrated/marginal likelihood of tau.</p>
 <p>We give more details about specifying <code>order</code> and <code>detap</code>. We set <code>order=1</code> (also by default) to use the first-order approximation of the inverse Hessian matrix in the optimization. By <code>detap=&#39;diagonal&#39;</code>, we tell <code>coxmeg</code> to use a diagonal approximation to compute the determinant, which is much faster under this setting, when estimating the variance component. By default (<code>detap=&#39;NULL&#39;</code>), <code>coxmeg</code> will automatically select a method for computing the determinant based on <code>type</code>, the sample size, and whether the relatedness matrix is symmetric positive definite (SPD).</p>
 <p>It should be noted that when the relatedness matrix is SPD, <code>coxmeg</code> will make use of the sparsity by setting <code>type=&#39;sparse&#39;</code> or <code>type=&#39;bd&#39;</code> regardless of whether the relatedness matrix or its inverse is sparse. However, when the relatedness matrix is symmetric positive semidefinite (SPSD), <code>coxmeg</code> can make use of the sparsity only when its inverse is sparse. When the relatedness matrix is SPSD and its inverse is dense, setting <code>type=&#39;sparse&#39;</code> may result in worse performance. In such a case, it would be better to use <code>type=&#39;dense&#39;</code> or to convert the relatedness matrix to SPD or block-diagonal if possible.</p>
@@ -434,23 +436,23 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb31-6" title="6">re_coxme</a></code></pre></div>
 <pre><code>## Cox mixed-effects model fit by maximum likelihood
 ## 
-##   events, n = 943, 1000
-##   Iterations= 23 97 
-##                    NULL Integrated    Fitted
-## Log-likelihood -5582.67  -5576.681 -5468.572
+##   events, n = 950, 1000
+##   Iterations= 10 45 
+##                     NULL Integrated    Fitted
+## Log-likelihood -5614.186  -5604.976 -5501.983
 ## 
-##                    Chisq     df          p   AIC     BIC
-## Integrated loglik  11.98   2.00 2.5057e-03  7.98   -1.72
-##  Penalized loglik 228.20 101.52 9.7148e-12 25.15 -467.13
+##                    Chisq    df          p   AIC     BIC
+## Integrated loglik  18.42  2.00 1.0006e-04 14.42    4.71
+##  Penalized loglik 224.40 97.04 4.3259e-12 30.32 -440.95
 ## 
 ## Model:  Surv(outcome[, 1], outcome[, 2]) ~ as.matrix(pred) + (1 | as.character(1:n)) 
 ## Fixed coefficients
-##                       coef exp(coef)   se(coef)    z     p
-## as.matrix(pred) 0.07013474  1.072653 0.03441157 2.04 0.042
+##                      coef exp(coef)   se(coef)    z       p
+## as.matrix(pred) 0.1330118  1.142263 0.03842993 3.46 0.00054
 ## 
 ## Random effects
 ##  Group             Variable Std Dev   Variance 
-##  as.character.1.n. Vmat.1   0.3779174 0.1428216</code></pre>
+##  as.character.1.n. Vmat.1   0.3660186 0.1339696</code></pre>
 <p>In GWAS, we may split the procedure into two separate steps, (1) estimate the variance component under the null model, and (2) estimate the coefficients for the predictors using the estimated variance component. This can be carried out in the following way.</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" title="1">re =<span class="st"> </span><span class="kw">coxmeg</span>(outcome,sigma,<span class="dt">type=</span><span class="st">&#39;bd&#39;</span>,<span class="dt">order=</span><span class="dv">1</span>,<span class="dt">detap=</span><span class="st">&#39;diagonal&#39;</span>)</a></code></pre></div>
 <pre><code>## Remove 0 subjects censored before the first failure.</code></pre>
@@ -461,7 +463,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <pre><code>## Solver: Cholesky decomposition (RcppEigen=TRUE).</code></pre>
 <div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" title="1">tau =<span class="st"> </span>re<span class="op">$</span>tau</a>
 <a class="sourceLine" id="cb40-2" title="2"><span class="kw">print</span>(tau)</a></code></pre></div>
-<pre><code>## [1] 0.1416254</code></pre>
+<pre><code>## [1] 0.1272666</code></pre>
 <div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" title="1">re2 =<span class="st"> </span><span class="kw">fit_ppl</span>(pred,outcome,sigma,<span class="dt">type=</span><span class="st">&#39;bd&#39;</span>,<span class="dt">tau=</span>tau,<span class="dt">order=</span><span class="dv">1</span>)</a></code></pre></div>
 <pre><code>## Remove 0 subjects censored before the first failure.</code></pre>
 <pre><code>## The sample size included is 1000.</code></pre>
@@ -470,23 +472,23 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <pre><code>## Solver: Cholesky decomposition (RcppEigen=TRUE).</code></pre>
 <div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" title="1">re2</a></code></pre></div>
 <pre><code>## $beta
-## [1] 0.07008919
+## [1] 0.1324756
 ## 
 ## $HR
-## [1] 1.072604
+## [1] 1.141651
 ## 
 ## $sd_beta
-## [1] 0.03438796
+## [1] 0.03829547
 ## 
 ## $p
-## [1] 0.04153097
+## [1] 0.0005415801
 ## 
 ## $iter
 ## [1] 3
 ## 
 ## $ppl
-##          [,1]
-## [1,] -5519.64</code></pre>
+##           [,1]
+## [1,] -5552.793</code></pre>
 </div>
 <div id="perform-gwas-of-an-age-at-onset-phenotype-with-a-sparse-relatedness-matrix" class="section level2">
 <h2>Perform GWAS of an age-at-onset phenotype with a sparse relatedness matrix</h2>
@@ -536,26 +538,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 19 null_18          1       19    D/d 0.09433333 0.09433333 null_18
 ## 20 null_19          1       20    d/D 0.11650000 0.11650000 null_19
 ##            beta        HR    sd_beta           p
-## 1   0.015672221 1.0157957 0.02938525 0.593800743
-## 2   0.019439315 1.0196295 0.03222055 0.546295543
-## 3  -0.049846383 0.9513756 0.03860369 0.196622652
-## 4   0.044130947 1.0451192 0.03701019 0.233104495
-## 5   0.028473195 1.0288824 0.03432501 0.406811610
-## 6  -0.114319207 0.8919732 0.04234100 0.006934686
-## 7  -0.017980601 0.9821801 0.04655567 0.699335832
-## 8  -0.004207972 0.9958009 0.02717806 0.876955520
-## 9  -0.063741749 0.9382473 0.02958443 0.031195426
-## 10 -0.008409342 0.9916259 0.02730688 0.758115100
-## 11 -0.013581297 0.9865105 0.02859981 0.634876960
-## 12  0.037508657 1.0382210 0.03113255 0.228278509
-## 13 -0.017215726 0.9829316 0.03628638 0.635185862
-## 14 -0.068207621 0.9340665 0.05698852 0.231358786
-## 15 -0.013965186 0.9861319 0.03431601 0.684038563
-## 16  0.002172723 1.0021751 0.03685681 0.952991636
-## 17  0.004762110 1.0047735 0.02859958 0.867755768
-## 18  0.001787423 1.0017890 0.03098518 0.953998458
-## 19 -0.016052127 0.9840760 0.04731970 0.734438629
-## 20 -0.022398245 0.9778507 0.04231691 0.596598910
+## 1   0.015672101 1.0157956 0.02938524 0.593803537
+## 2   0.019439150 1.0196293 0.03222054 0.546298835
+## 3  -0.049845757 0.9513762 0.03860368 0.196628160
+## 4   0.044130767 1.0451190 0.03701019 0.233106387
+## 5   0.028473176 1.0288824 0.03432500 0.406811816
+## 6  -0.114319159 0.8919732 0.04234095 0.006934636
+## 7  -0.017981231 0.9821795 0.04655562 0.699325464
+## 8  -0.004207897 0.9958009 0.02717805 0.876957699
+## 9  -0.063741849 0.9382472 0.02958441 0.031195036
+## 10 -0.008409562 0.9916257 0.02730686 0.758108827
+## 11 -0.013581479 0.9865103 0.02859980 0.634872392
+## 12  0.037508301 1.0382206 0.03113254 0.228282858
+## 13 -0.017215848 0.9829315 0.03628637 0.635183349
+## 14 -0.068207724 0.9340664 0.05698849 0.231357835
+## 15 -0.013965386 0.9861317 0.03431600 0.684034201
+## 16  0.002172773 1.0021751 0.03685682 0.952990554
+## 17  0.004762350 1.0047737 0.02859957 0.867749134
+## 18  0.001786995 1.0017886 0.03098518 0.954009439
+## 19 -0.016052310 0.9840758 0.04731969 0.734435643
+## 20 -0.022398126 0.9778508 0.04231689 0.596600710
 ## 
 ## $tau
 ## [1] 0.04028041
@@ -575,17 +577,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb55-3" title="3">re =<span class="st"> </span><span class="kw">coxmeg_m</span>(geno,pheno_m[,<span class="dv">3</span><span class="op">:</span><span class="dv">4</span>],sigma,<span class="dt">type=</span><span class="st">&#39;bd&#39;</span>,<span class="dt">verbose=</span><span class="ot">FALSE</span>)</a>
 <a class="sourceLine" id="cb55-4" title="4">re</a></code></pre></div>
 <pre><code>## $summary
-##           beta        HR    sd_beta          p
-## 1   0.03295694 1.0335060 0.03051234 0.28008950
-## 2   0.01963628 1.0198303 0.02935374 0.50352520
-## 3   0.03202837 1.0325468 0.02970273 0.28090104
-## 4  -0.03572535 0.9649053 0.02908243 0.21929056
-## 5  -0.01164143 0.9884261 0.03010007 0.69893567
-## 6  -0.01230072 0.9877746 0.02957649 0.67748673
-## 7  -0.02261299 0.9776408 0.02951622 0.44360440
-## 8  -0.02453970 0.9757589 0.02901202 0.39763869
-## 9   0.06360867 1.0656753 0.02942249 0.03062539
-## 10  0.02846533 1.0288743 0.02945011 0.33376357
+##            beta        HR    sd_beta         p
+## 1  -0.035094019 0.9655146 0.02964582 0.2365016
+## 2   0.033092490 1.0336461 0.03025935 0.2741179
+## 3   0.023751168 1.0240355 0.03020459 0.4316665
+## 4  -0.004037959 0.9959702 0.02920218 0.8900223
+## 5   0.003391196 1.0033970 0.03073612 0.9121456
+## 6  -0.038594638 0.9621406 0.02963872 0.1928584
+## 7  -0.002319308 0.9976834 0.02940967 0.9371423
+## 8   0.016445955 1.0165819 0.02909778 0.5719403
+## 9   0.034063619 1.0346504 0.02873043 0.2357691
+## 10 -0.018736029 0.9814384 0.03047449 0.5386800
 ## 
 ## $tau
 ## [1] 0.04052206
@@ -687,6 +689,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="refs" class="references">
 <div id="ref-He_2020">
 <p>He, Liang, and Alexander M. Kulminski. 2020. “Fast Algorithms for Conducting Large-Scale GWAS of Age-at-Onset Traits Using Cox Mixed-Effects Models.” <em>Genetics</em>, March, genetics.302940.2019. <a href="https://doi.org/10.1534/genetics.119.302940">https://doi.org/10.1534/genetics.119.302940</a>.</p>
+</div>
 </div>
 </div>
 </div>
