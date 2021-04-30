@@ -181,7 +181,7 @@ re = coxmeg_plink(pheno,sigma,type='dense',bed=bed,tmp_dir=tempdir(),tau=re$tau,
 re
 ```
 
-In this result, the column ```score_test``` is the score test statistic, which follows a $\chi^2$ distribution with 1 d.f. The column ```score``` is the score function divided by its variance. Note that ```score``` is not the estimate of log(HR) under the full model. It is actually a one-step update of the Newton-Raphson algoritm starting from the values estimated under the null model. Comparing ```score``` with log(HR) estimated in the previous section, we see that they are close to each other in this example. However, the difference can be large if the genotype is highly correlated with the covariates or random effects.  
+In this result, the column ```score_test``` is the score test statistic, which follows a $\chi^2$ distribution with 1 d.f. The column ```score``` is the score function divided by its variance. Note that ```score``` is not the estimate of log(HR) under the full model. It is actually a one-step update of the Newton-Raphson algorithm starting from the values estimated under the null model. Comparing ```score``` with log(HR) estimated in the previous section, we see that they are close to each other in this example. However, the difference can be large if the genotype is highly correlated with the covariates or random effects.  
 
 ## Handle positive semidefinite relatedness matrices
 

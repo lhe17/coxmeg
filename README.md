@@ -82,13 +82,13 @@ factor with log(HR)=0.1.
     outcome <- cbind(ycen,as.numeric(y <= cen))
     head(outcome)
 
-    ##           ycen  
-    ## [1,] 3.9563596 1
-    ## [2,] 7.1771349 1
-    ## [3,] 7.5607081 1
-    ## [4,] 0.5005451 1
-    ## [5,] 4.0746380 1
-    ## [6,] 0.5177455 1
+    ##             ycen  
+    ## [1,]  0.81016040 1
+    ## [2,]  1.10852426 1
+    ## [3,]  4.43368009 1
+    ## [4,] 10.79921116 1
+    ## [5,]  1.28142886 1
+    ## [6,]  0.07594902 1
 
     sigma[1:5,1:5]
 
@@ -105,9 +105,9 @@ set `type='bd'` because the relatedness matrix is a block-diagonal
 matrix. Note that `type='bd'` should be used only for a block-diagonal
 matrix or a sparse matrix of which its inverse matrix is also highly
 sparse. A sparse kinship matrix can be converted to a block-diagonal
-matrix using [kingToMatrix](./coxmeg_gds_example.md). For a
-general sparse relatedness matrix of which its inverse is not sparse, it
-is recommended that `type='sparse'` be used. When `type='sparse'` is
+matrix using [kingToMatrix](./coxmeg_gds_example.md). For a general
+sparse relatedness matrix of which its inverse is not sparse, it is
+recommended that `type='sparse'` be used. When `type='sparse'` is
 specified, the relatedness matrix will not be inverted during the
 estimation procedure. The function will automatically treat the
 relatedness matrix as dense if there are more than 50% non-zero elements
@@ -134,19 +134,19 @@ stop with an error indicating sigularity.
     re
 
     ## $beta
-    ## [1] 0.02482134
+    ## [1] 0.1112572
     ## 
     ## $HR
-    ## [1] 1.025132
+    ## [1] 1.117682
     ## 
     ## $sd_beta
-    ## [1] 0.03666048
+    ## [1] 0.03650737
     ## 
     ## $p
-    ## [1] 0.4983679
+    ## [1] 0.002307331
     ## 
     ## $tau
-    ## [1] 0.1731624
+    ## [1] 0.1221039
     ## 
     ## $iter
     ## [1] 16
@@ -158,7 +158,7 @@ stop with an error indicating sigularity.
     ## [1] 1000
     ## 
     ## $int_ll
-    ## [1] 11574.44
+    ## [1] 11500.05
 
 In the above result, `tau` is the estimated variance component, and
 `int_ll` is -2\*log(lik) of the integrated/marginal likelihood of tau.
@@ -217,23 +217,23 @@ used.
 
     ## Cox mixed-effects model fit by maximum likelihood
     ## 
-    ##   events, n = 949, 1000
-    ##   Iterations= 22 94 
-    ##                     NULL Integrated   Fitted
-    ## Log-likelihood -5624.431  -5619.731 -5491.11
+    ##   events, n = 946, 1000
+    ##   Iterations= 7 33 
+    ##                     NULL Integrated    Fitted
+    ## Log-likelihood -5589.547  -5582.557 -5486.328
     ## 
-    ##                    Chisq     df          p   AIC     BIC
-    ## Integrated loglik   9.40   2.00 9.0903e-03  5.40   -4.31
-    ##  Penalized loglik 266.64 119.16 2.6634e-13 28.32 -550.25
+    ##                    Chisq    df          p   AIC     BIC
+    ## Integrated loglik  13.98  2.00 9.2174e-04  9.98    0.27
+    ##  Penalized loglik 206.44 91.08 6.1620e-11 24.27 -417.68
     ## 
     ## Model:  Surv(outcome[, 1], outcome[, 2]) ~ as.matrix(pred) + (1 | as.character(1:n)) 
     ## Fixed coefficients
-    ##                      coef exp(coef)   se(coef)    z   p
-    ## as.matrix(pred) 0.0248857  1.025198 0.03671398 0.68 0.5
+    ##                      coef exp(coef)   se(coef)    z      p
+    ## as.matrix(pred) 0.1113307  1.117764 0.03655521 3.05 0.0023
     ## 
     ## Random effects
     ##  Group             Variable Std Dev   Variance 
-    ##  as.character.1.n. Vmat.1   0.4183460 0.1750134
+    ##  as.character.1.n. Vmat.1   0.3524434 0.1242163
 
 In GWAS, we may split the procedure into two separate steps, (1)
 estimate the variance component under the null model, and (2) estimate
@@ -257,7 +257,7 @@ component. This can be carried out in the following way.
     tau = re$tau
     print(tau)
 
-    ## [1] 0.1704599
+    ## [1] 0.1328846
 
     re2 = fit_ppl(pred,outcome,sigma,type='bd',tau=tau,order=1)
 
@@ -274,23 +274,23 @@ component. This can be carried out in the following way.
     re2
 
     ## $beta
-    ## [1] 0.02472851
+    ## [1] 0.1116245
     ## 
     ## $HR
-    ## [1] 1.025037
+    ## [1] 1.118093
     ## 
     ## $sd_beta
-    ## [1] 0.03661347
+    ## [1] 0.03670515
     ## 
     ## $p
-    ## [1] 0.4994256
+    ## [1] 0.00235706
     ## 
     ## $iter
-    ## [1] 4
+    ## [1] 3
     ## 
     ## $ppl
     ##           [,1]
-    ## [1,] -5552.299
+    ## [1,] -5528.541
 
 Perform GWAS of an age-at-onset phenotype with a sparse relatedness matrix
 --------------------------------------------------------------------------
@@ -417,16 +417,16 @@ SNPs. In the following example, we simulate 10 independent SNPs, and use
 
     ## $summary
     ##            beta        HR    sd_beta          p
-    ## 1  -0.013836758 0.9862585 0.02995662 0.64415798
-    ## 2  -0.004709216 0.9953019 0.03023657 0.87623347
-    ## 3   0.029468921 1.0299074 0.02963562 0.32004028
-    ## 4  -0.017503736 0.9826486 0.02945657 0.55236378
-    ## 5   0.048644826 1.0498474 0.02961778 0.10050308
-    ## 6  -0.053620077 0.9477921 0.02957838 0.06986063
-    ## 7   0.074566608 1.0774171 0.03021080 0.01357904
-    ## 8   0.023469183 1.0237468 0.02952778 0.42671989
-    ## 9   0.023355308 1.0236302 0.02998626 0.43605809
-    ## 10 -0.025082039 0.9752299 0.02937368 0.39316324
+    ## 1   0.059188460 1.0609752 0.02923189 0.04288888
+    ## 2   0.005944197 1.0059619 0.02992764 0.84256082
+    ## 3  -0.028604029 0.9718012 0.02961897 0.33417756
+    ## 4   0.009402588 1.0094469 0.02944845 0.74950680
+    ## 5  -0.069337562 0.9330117 0.03003132 0.02095238
+    ## 6  -0.015927689 0.9841985 0.02960991 0.59063404
+    ## 7   0.054868272 1.0564014 0.02984028 0.06595460
+    ## 8  -0.013162806 0.9869234 0.03051951 0.66625637
+    ## 9  -0.016578936 0.9835577 0.02934551 0.57210336
+    ## 10 -0.002203286 0.9977991 0.02992900 0.94131506
     ## 
     ## $tau
     ## [1] 0.04052206
@@ -525,7 +525,7 @@ In this result, the column `score_test` is the score test statistic,
 which follows a *χ*<sup>2</sup> distribution with 1 d.f. The column
 `score` is the score function divided by its variance. Note that `score`
 is not the estimate of log(HR) under the full model. It is actually a
-one-step update of the Newton-Raphson algoritm starting from the values
+one-step update of the Newton-Raphson algorithm starting from the values
 estimated under the null model. Comparing `score` with log(HR) estimated
 in the previous section, we see that they are close to each other in
 this example. However, the difference can be large if the genotype is
