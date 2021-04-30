@@ -1,0 +1,130 @@
+---
+title: "Using GDS files with coxmeg"
+author: "Stephanie Gogarten"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using GDS files with coxmeg}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+In addition to the functions described in the main coxmeg vignette, the `coxmeg_gds` function allows running coxmeg directly on Genomic Data Structure (GDS) file objects. The basic structure of GDS files is described in the gdsfmt package.
+
+There are two implementations of GDS files. The original format was developed for SNP arrays, and an interface to files in this format is defined in the SNPRelate package. A newer format developed for sequencing was designed to import all data stored in VCF files. An interface to the sequencing format is defined in the SeqArray package. `coxmeg_gds` supports both file types.
+
+
+## SNPRelate example
+
+In the first example, we use an original GDS file and open it with the SNPRelate package.
+
+```{r, message=FALSE}
+library(coxmeg)
+library(gdsfmt)
+library(SNPRelate)
+snpfile <- snpgdsExampleFileName()
+snp <- snpgdsOpen(snpfile)
+```
+
+We use the `snpgdsGRM` function in SNPRelate to create a genetic relationship matrix (GRM) with the GCTA method.
+
+```{r}
+grm <- snpgdsGRM(snp, method="GCTA", verbose=FALSE)
+sigma <- grm$grm
+dimnames(sigma) <- list(grm$sample.id, grm$sample.id)
+sigma[1:5, 1:5]
+```
+
+We create a data.frame of simulated time-to-event outcomes. The first two columns of the data.frame are expected to be family id and sample (individual) id.
+
+```{r}
+sample.id <- read.gdsn(index.gdsn(snp, "sample.id"))
+family.id <- read.gdsn(index.gdsn(snp, "sample.annot/family.id"))
+n <- length(sample.id)
+set.seed(5)
+time <- rnorm(n, mean=100, sd=10)
+set.seed(6)
+status <- rbinom(n, 1, 0.4)
+pheno <- data.frame(family.id, sample.id, time, status,
+                    stringsAsFactors=FALSE)
+head(pheno)
+```
+
+We will adjust for sex and population group as covariates in the model. As in the outcome data.frame, family id and sample id are the first two columns. Categorical variables need to be converted to dummy variables, so we utilize the `model.matrix` function to prepare the covariates.
+
+```{r}
+sex <- read.gdsn(index.gdsn(snp, "sample.annot/sex"))
+pop <- read.gdsn(index.gdsn(snp, "sample.annot/pop.group"))
+cov <- data.frame(sex, pop)
+head(cov)
+mm <- model.matrix(~ sex + pop, cov)
+cov <- cbind(pheno[,1:2], mm[,-1])
+head(cov)
+```
+
+The coxmeg_gds function fits a Cox mixed-effects model to variants stored in a GDS file. The `snp.id` argument allows selecting a subset of variants.
+
+The GRM is a dense matrix and not postive definite, so we set `type='dense'` and `spd=FALSE`.
+
+```{r}
+snp.id <- read.gdsn(index.gdsn(snp, "snp.id"))
+re <- coxmeg_gds(snp, pheno, sigma, type='dense', cov=cov, snp.id=snp.id[1:100], spd=FALSE)
+head(re$summary)
+```
+
+```{r}
+snpgdsClose(snp)
+```
+
+
+## SeqArray example
+
+In this example, we use a sequencing GDS file and open it with the SeqArray package.
+
+```{r}
+library(SeqArray)
+seqfile <- seqExampleFileName()
+seq <- seqOpen(seqfile)
+```
+
+As an alternate method of creating a random effects matrix, we use the KING algorithm to estimate pairwise relatedness, and use the GENESIS package to transform the results into a sparse block-diagonal matrix. The threshold chosen corresponds to setting values for pairs less closely related than second-degree relatives to 0. We multiply the matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is the kinship coefficient for identical genomes).
+
+```{r}
+king <- snpgdsIBDKING(seq, verbose=FALSE)
+sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
+sigma[1:5,1:5]
+```
+
+We create a data.frame of simulated time-to-event outcomes. The first two columns of the data.frame are expected to be family id and sample (individual) id.
+
+```{r}
+sample.id <- seqGetData(seq, "sample.id")
+family.id <- seqGetData(seq, "sample.annotation/family")
+family.id[family.id == ""] <- sample.id[family.id == ""]
+n <- length(sample.id)
+set.seed(35)
+time <- rnorm(n, mean=100, sd=10)
+set.seed(36)
+status <- rbinom(n, 1, 0.4)
+pheno <- data.frame(family.id, sample.id, time, status,
+                    stringsAsFactors=FALSE)
+head(pheno)
+```
+
+The SeqArray package allows for pre-selecting variants using the `seqSetFilter` function. We set `type='bd'` since `sigma` is a block diagonal matrix.
+
+```{r}
+seqSetFilter(seq, variant.sel=1:100)
+re <- coxmeg_gds(seq, pheno, sigma, type='bd')
+head(re$summary)
+```
+
+```{r}
+seqClose(seq)
+```
+
+In this vignette we presented two examples, each using a different GDS file type and method of creating a random effects matrix. We note that the choice of random effects matrix in each case was arbitrary; and either method of generating the matrix would work with either GDS file type.
+
+The code in `coxmeg_gds` is very similar to the code in `coxmeg_plink`, as the latter function converts the plink file to GDS before reading genotypes. `coxmeg_gds` takes R objects as arguments for phenotypes, covariates, and a connection to the GDS file; while `coxmeg_plink` takes paths to files on disk. If the user intends to utilize any other functions requiring a GDS object, or to run multiple analyses on the same dataset, it will be more efficient to convert a plink file to GDS first with the SNPRelate function `snpgdsBED2GDS` (or the SeqArray function `seqBED2GDS`), then use `coxmeg_gds` instead of `coxmeg_plink`.
