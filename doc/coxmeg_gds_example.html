@@ -12,34 +12,66 @@
 
 <meta name="author" content="Stephanie Gogarten" />
 
-<meta name="date" content="2021-04-30" />
+<meta name="date" content="2022-12-14" />
 
 <title>Using GDS files with coxmeg</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
-code.sourceCode { white-space: pre; position: relative; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
 }
 @media print {
-code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -48,9 +80,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; font-weight: bold; } /* Alert */
 code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
@@ -90,13 +122,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -104,6 +143,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -301,47 +341,57 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Using GDS files with coxmeg</h1>
 <h4 class="author">Stephanie Gogarten</h4>
-<h4 class="date">2021-04-30</h4>
+<h4 class="date">2022-12-14</h4>
 
 
 
 <div id="overview" class="section level2">
 <h2>Overview</h2>
-<p>In addition to the functions described in the main coxmeg vignette, the <code>coxmeg_gds</code> function allows running coxmeg directly on Genomic Data Structure (GDS) file objects. The basic structure of GDS files is described in the gdsfmt package.</p>
-<p>There are two implementations of GDS files. The original format was developed for SNP arrays, and an interface to files in this format is defined in the SNPRelate package. A newer format developed for sequencing was designed to import all data stored in VCF files. An interface to the sequencing format is defined in the SeqArray package. <code>coxmeg_gds</code> supports both file types.</p>
+<p>In addition to the functions described in the main coxmeg vignette,
+the <code>coxmeg_gds</code> function allows running coxmeg directly on
+Genomic Data Structure (GDS) file objects. The basic structure of GDS
+files is described in the gdsfmt package.</p>
+<p>There are two implementations of GDS files. The original format was
+developed for SNP arrays, and an interface to files in this format is
+defined in the SNPRelate package. A newer format developed for
+sequencing was designed to import all data stored in VCF files. An
+interface to the sequencing format is defined in the SeqArray package.
+<code>coxmeg_gds</code> supports both file types.</p>
 </div>
 <div id="snprelate-example" class="section level2">
 <h2>SNPRelate example</h2>
-<p>In the first example, we use an original GDS file and open it with the SNPRelate package.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(coxmeg)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="kw">library</span>(gdsfmt)</a></code></pre></div>
-<pre><code>## Warning: package &#39;gdsfmt&#39; was built under R version 3.6.1</code></pre>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">library</span>(SNPRelate)</a></code></pre></div>
-<pre><code>## Warning: package &#39;SNPRelate&#39; was built under R version 3.6.1</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">snpfile &lt;-<span class="st"> </span><span class="kw">snpgdsExampleFileName</span>()</a>
-<a class="sourceLine" id="cb5-2" title="2">snp &lt;-<span class="st"> </span><span class="kw">snpgdsOpen</span>(snpfile)</a></code></pre></div>
-<p>We use the <code>snpgdsGRM</code> function in SNPRelate to create a genetic relationship matrix (GRM) with the GCTA method.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">grm &lt;-<span class="st"> </span><span class="kw">snpgdsGRM</span>(snp, <span class="dt">method=</span><span class="st">&quot;GCTA&quot;</span>, <span class="dt">verbose=</span><span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb6-2" title="2">sigma &lt;-<span class="st"> </span>grm<span class="op">$</span>grm</a>
-<a class="sourceLine" id="cb6-3" title="3"><span class="kw">dimnames</span>(sigma) &lt;-<span class="st"> </span><span class="kw">list</span>(grm<span class="op">$</span>sample.id, grm<span class="op">$</span>sample.id)</a>
-<a class="sourceLine" id="cb6-4" title="4">sigma[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">5</span>]</a></code></pre></div>
+<p>In the first example, we use an original GDS file and open it with
+the SNPRelate package.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coxmeg)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gdsfmt)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SNPRelate)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>snpfile <span class="ot">&lt;-</span> <span class="fu">snpgdsExampleFileName</span>()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>snp <span class="ot">&lt;-</span> <span class="fu">snpgdsOpen</span>(snpfile)</span></code></pre></div>
+<p>We use the <code>snpgdsGRM</code> function in SNPRelate to create a
+genetic relationship matrix (GRM) with the GCTA method.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>grm <span class="ot">&lt;-</span> <span class="fu">snpgdsGRM</span>(snp, <span class="at">method=</span><span class="st">&quot;GCTA&quot;</span>, <span class="at">verbose=</span><span class="cn">FALSE</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> grm<span class="sc">$</span>grm</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(sigma) <span class="ot">&lt;-</span> <span class="fu">list</span>(grm<span class="sc">$</span>sample.id, grm<span class="sc">$</span>sample.id)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>sigma[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span></code></pre></div>
 <pre><code>##            NA19152    NA19139    NA18912    NA19160    NA07034
 ## NA19152  1.3946382  0.2396834  0.2516490  0.2578472 -0.1005009
 ## NA19139  0.2396834  1.3284340  0.2188917  0.2378597 -0.1076276
 ## NA18912  0.2516490  0.2188917  1.3785072  0.2632486 -0.1027841
 ## NA19160  0.2578472  0.2378597  0.2632486  1.4305388 -0.1342964
 ## NA07034 -0.1005009 -0.1076276 -0.1027841 -0.1342964  0.9723706</code></pre>
-<p>We create a data.frame of simulated time-to-event outcomes. The first two columns of the data.frame are expected to be family id and sample (individual) id.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">sample.id &lt;-<span class="st"> </span><span class="kw">read.gdsn</span>(<span class="kw">index.gdsn</span>(snp, <span class="st">&quot;sample.id&quot;</span>))</a>
-<a class="sourceLine" id="cb8-2" title="2">family.id &lt;-<span class="st"> </span><span class="kw">read.gdsn</span>(<span class="kw">index.gdsn</span>(snp, <span class="st">&quot;sample.annot/family.id&quot;</span>))</a>
-<a class="sourceLine" id="cb8-3" title="3">n &lt;-<span class="st"> </span><span class="kw">length</span>(sample.id)</a>
-<a class="sourceLine" id="cb8-4" title="4"><span class="kw">set.seed</span>(<span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb8-5" title="5">time &lt;-<span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">mean=</span><span class="dv">100</span>, <span class="dt">sd=</span><span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb8-6" title="6"><span class="kw">set.seed</span>(<span class="dv">6</span>)</a>
-<a class="sourceLine" id="cb8-7" title="7">status &lt;-<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.4</span>)</a>
-<a class="sourceLine" id="cb8-8" title="8">pheno &lt;-<span class="st"> </span><span class="kw">data.frame</span>(family.id, sample.id, time, status,</a>
-<a class="sourceLine" id="cb8-9" title="9">                    <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb8-10" title="10"><span class="kw">head</span>(pheno)</a></code></pre></div>
+<p>We create a data.frame of simulated time-to-event outcomes. The first
+two columns of the data.frame are expected to be family id and sample
+(individual) id.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>sample.id <span class="ot">&lt;-</span> <span class="fu">read.gdsn</span>(<span class="fu">index.gdsn</span>(snp, <span class="st">&quot;sample.id&quot;</span>))</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>family.id <span class="ot">&lt;-</span> <span class="fu">read.gdsn</span>(<span class="fu">index.gdsn</span>(snp, <span class="st">&quot;sample.annot/family.id&quot;</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(sample.id)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="at">mean=</span><span class="dv">100</span>, <span class="at">sd=</span><span class="dv">10</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">6</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>status <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.4</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>pheno <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(family.id, sample.id, time, status,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                    <span class="at">stringsAsFactors=</span><span class="cn">FALSE</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pheno)</span></code></pre></div>
 <pre><code>##   family.id sample.id      time status
 ## 1        72   NA19152  91.59145      1
 ## 2        43   NA19139 113.84359      1
@@ -349,11 +399,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 4        56   NA19160 100.70143      0
 ## 5      1341   NA07034 117.11441      1
 ## 6      1341   NA07055  93.97092      1</code></pre>
-<p>We will adjust for sex and population group as covariates in the model. As in the outcome data.frame, family id and sample id are the first two columns. Categorical variables need to be converted to dummy variables, so we utilize the <code>model.matrix</code> function to prepare the covariates.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">sex &lt;-<span class="st"> </span><span class="kw">read.gdsn</span>(<span class="kw">index.gdsn</span>(snp, <span class="st">&quot;sample.annot/sex&quot;</span>))</a>
-<a class="sourceLine" id="cb10-2" title="2">pop &lt;-<span class="st"> </span><span class="kw">read.gdsn</span>(<span class="kw">index.gdsn</span>(snp, <span class="st">&quot;sample.annot/pop.group&quot;</span>))</a>
-<a class="sourceLine" id="cb10-3" title="3">cov &lt;-<span class="st"> </span><span class="kw">data.frame</span>(sex, pop)</a>
-<a class="sourceLine" id="cb10-4" title="4"><span class="kw">head</span>(cov)</a></code></pre></div>
+<p>We will adjust for sex and population group as covariates in the
+model. As in the outcome data.frame, family id and sample id are the
+first two columns. Categorical variables need to be converted to dummy
+variables, so we utilize the <code>model.matrix</code> function to
+prepare the covariates.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sex <span class="ot">&lt;-</span> <span class="fu">read.gdsn</span>(<span class="fu">index.gdsn</span>(snp, <span class="st">&quot;sample.annot/sex&quot;</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>pop <span class="ot">&lt;-</span> <span class="fu">read.gdsn</span>(<span class="fu">index.gdsn</span>(snp, <span class="st">&quot;sample.annot/pop.group&quot;</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>cov <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(sex, pop)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(cov)</span></code></pre></div>
 <pre><code>##   sex pop
 ## 1   F YRI
 ## 2   M YRI
@@ -361,9 +415,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 4   M YRI
 ## 5   M CEU
 ## 6   F CEU</code></pre>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">mm &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>pop, cov)</a>
-<a class="sourceLine" id="cb12-2" title="2">cov &lt;-<span class="st"> </span><span class="kw">cbind</span>(pheno[,<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>], mm[,<span class="op">-</span><span class="dv">1</span>])</a>
-<a class="sourceLine" id="cb12-3" title="3"><span class="kw">head</span>(cov)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>mm <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> sex <span class="sc">+</span> pop, cov)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>cov <span class="ot">&lt;-</span> <span class="fu">cbind</span>(pheno[,<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], mm[,<span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(cov)</span></code></pre></div>
 <pre><code>##   family.id sample.id sexM popHCB popJPT popYRI
 ## 1        72   NA19152    0      0      0      1
 ## 2        43   NA19139    1      0      0      1
@@ -371,25 +425,28 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 4        56   NA19160    1      0      0      1
 ## 5      1341   NA07034    1      0      0      0
 ## 6      1341   NA07055    0      0      0      0</code></pre>
-<p>The coxmeg_gds function fits a Cox mixed-effects model to variants stored in a GDS file. The <code>snp.id</code> argument allows selecting a subset of variants.</p>
-<p>The GRM is a dense matrix and not postive definite, so we set <code>type=&#39;dense&#39;</code> and <code>spd=FALSE</code>.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">snp.id &lt;-<span class="st"> </span><span class="kw">read.gdsn</span>(<span class="kw">index.gdsn</span>(snp, <span class="st">&quot;snp.id&quot;</span>))</a>
-<a class="sourceLine" id="cb14-2" title="2">re &lt;-<span class="st"> </span><span class="kw">coxmeg_gds</span>(snp, pheno, sigma, <span class="dt">type=</span><span class="st">&#39;dense&#39;</span>, <span class="dt">cov=</span>cov, <span class="dt">snp.id=</span>snp.id[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>], <span class="dt">spd=</span><span class="ot">FALSE</span>)</a></code></pre></div>
+<p>The coxmeg_gds function fits a Cox mixed-effects model to variants
+stored in a GDS file. The <code>snp.id</code> argument allows selecting
+a subset of variants.</p>
+<p>The GRM is a dense matrix and not postive definite, so we set
+<code>type=&#39;dense&#39;</code> and <code>spd=FALSE</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>snp.id <span class="ot">&lt;-</span> <span class="fu">read.gdsn</span>(<span class="fu">index.gdsn</span>(snp, <span class="st">&quot;snp.id&quot;</span>))</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>re <span class="ot">&lt;-</span> <span class="fu">coxmeg_gds</span>(snp, pheno, sigma, <span class="at">type=</span><span class="st">&#39;dense&#39;</span>, <span class="at">cov=</span>cov, <span class="at">snp.id=</span>snp.id[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>], <span class="at">spd=</span><span class="cn">FALSE</span>)</span></code></pre></div>
 <pre><code>## There are 279 subjects who have genotype data and have no missing phenotype or covariates.</code></pre>
 <pre><code>## Remove 0 subjects censored before the first failure.</code></pre>
-<pre><code>## Warning in chol.default(x, pivot = TRUE): the matrix is either rank-deficient or
-## indefinite</code></pre>
-<pre><code>## There is/are 4 covariates. The sample size included is 279. The rank of the relatedness matrix is 276</code></pre>
-<pre><code>## The relatedness matrix is treated as dense.</code></pre>
+<pre><code>## There is/are 4 covariates. The sample size included is 279.</code></pre>
+<pre><code>## Warning in coxmeg_gds(snp, pheno, sigma, type = &quot;dense&quot;, cov = cov, snp.id =
+## snp.id[1:100], : The relatedness matrix has negative eigenvalues. Please use a
+## positive (semi)definite matrix.</code></pre>
+<pre><code>## The correlation matrix is treated as dense.</code></pre>
 <pre><code>## The relatedness matrix is inverted.</code></pre>
 <pre><code>## The method for computing the determinant is &#39;exact&#39;.</code></pre>
 <pre><code>## Solver: PCG (RcppEigen:dense).</code></pre>
-<pre><code>## Warning in coxmeg_gds(snp, pheno, sigma, type = &quot;dense&quot;, cov = cov, snp.id
-## = snp.id[1:100], : The estimated variance component equals the lower bound
-## (1e-04), probably suggesting no random effects.</code></pre>
+<pre><code>## Warning in check_tau(tau_e, min_tau, max_tau, ncm): The estimated variance
+## component equals the lower bound (1e-04), probably suggesting no random effects.</code></pre>
 <pre><code>## The variance component is estimated. Start analyzing SNPs...</code></pre>
 <pre><code>## Excluding 28 SNPs (monomorphic: TRUE, MAF: 0.05, missing rate: 0)</code></pre>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">head</span>(re<span class="op">$</span>summary)</a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(re<span class="sc">$</span>summary)</span></code></pre></div>
 <pre><code>##   snp.id chromosome position allele     afreq afreq_inc index        beta
 ## 1      1          1  1355433    G/T 0.6989247 0.6989247     1 -0.23752776
 ## 2      2          1  3114015    C/T 0.2043011 0.2043011     2 -0.03767414
@@ -404,25 +461,35 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 6 1.2286829 0.1798058 0.2520591
 ## 8 0.9873308 0.1555024 0.9346519
 ## 9 0.8609076 0.1750789 0.3923122</code></pre>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" title="1"><span class="kw">snpgdsClose</span>(snp)</a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">snpgdsClose</span>(snp)</span></code></pre></div>
 </div>
 <div id="seqarray-example" class="section level2">
 <h2>SeqArray example</h2>
-<p>In this example, we use a sequencing GDS file and open it with the SeqArray package.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">library</span>(SeqArray)</a></code></pre></div>
-<pre><code>## Warning: package &#39;SeqArray&#39; was built under R version 3.6.2</code></pre>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" title="1">seqfile &lt;-<span class="st"> </span><span class="kw">seqExampleFileName</span>()</a>
-<a class="sourceLine" id="cb31-2" title="2">seq &lt;-<span class="st"> </span><span class="kw">seqOpen</span>(seqfile)</a></code></pre></div>
-<p>As an alternate method of creating a random effects matrix, we use the KING algorithm to estimate pairwise relatedness, and use the GENESIS package to transform the results into a sparse block-diagonal matrix. The threshold chosen corresponds to setting values for pairs less closely related than second-degree relatives to 0. We multiply the matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is the kinship coefficient for identical genomes).</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" title="1">king &lt;-<span class="st"> </span><span class="kw">snpgdsIBDKING</span>(seq, <span class="dt">verbose=</span><span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb32-2" title="2">sigma &lt;-<span class="st"> </span>GENESIS<span class="op">::</span><span class="kw">kingToMatrix</span>(king, <span class="dt">thresh=</span><span class="fl">0.177</span>) <span class="op">*</span><span class="st"> </span><span class="dv">2</span></a></code></pre></div>
+<p>In this example, we use a sequencing GDS file and open it with the
+SeqArray package.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SeqArray)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>seqfile <span class="ot">&lt;-</span> <span class="fu">seqExampleFileName</span>()</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>seq <span class="ot">&lt;-</span> <span class="fu">seqOpen</span>(seqfile)</span></code></pre></div>
+<p>As an alternate method of creating a random effects matrix, we use
+the KING algorithm to estimate pairwise relatedness, and use the GENESIS
+package to transform the results into a sparse block-diagonal matrix.
+The threshold chosen corresponds to setting values for pairs less
+closely related than second-degree relatives to 0. We multiply the
+matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is
+the kinship coefficient for identical genomes).</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GENESIS)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="fu">requireNamespace</span>(<span class="st">&#39;GENESIS&#39;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  king <span class="ot">&lt;-</span> <span class="fu">snpgdsIBDKING</span>(seq, <span class="at">verbose=</span><span class="cn">FALSE</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> GENESIS<span class="sc">::</span><span class="fu">kingToMatrix</span>(king, <span class="at">thresh=</span><span class="fl">0.177</span>) <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  sigma[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <pre><code>## Using 90 samples provided</code></pre>
 <pre><code>## Identifying clusters of relatives...</code></pre>
 <pre><code>##     16 relatives in 2 clusters; largest cluster = 13</code></pre>
 <pre><code>## Creating block matrices for clusters...</code></pre>
 <pre><code>## 74 samples with no relatives included</code></pre>
 <pre><code>## Putting all samples together into one block diagonal matrix</code></pre>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" title="1">sigma[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>]</a></code></pre></div>
 <pre><code>## 5 x 5 sparse Matrix of class &quot;dsCMatrix&quot;
 ##           NA06984   NA06989   NA12156  NA11832  NA12249
 ## NA06984 1.0000000 0.3580247 0.2153846 .        .       
@@ -430,18 +497,20 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## NA12156 0.2153846 0.3870968 1.0000000 .        .       
 ## NA11832 .         .         .         1.000000 0.238255
 ## NA12249 .         .         .         0.238255 1.000000</code></pre>
-<p>We create a data.frame of simulated time-to-event outcomes. The first two columns of the data.frame are expected to be family id and sample (individual) id.</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" title="1">sample.id &lt;-<span class="st"> </span><span class="kw">seqGetData</span>(seq, <span class="st">&quot;sample.id&quot;</span>)</a>
-<a class="sourceLine" id="cb41-2" title="2">family.id &lt;-<span class="st"> </span><span class="kw">seqGetData</span>(seq, <span class="st">&quot;sample.annotation/family&quot;</span>)</a>
-<a class="sourceLine" id="cb41-3" title="3">family.id[family.id <span class="op">==</span><span class="st"> &quot;&quot;</span>] &lt;-<span class="st"> </span>sample.id[family.id <span class="op">==</span><span class="st"> &quot;&quot;</span>]</a>
-<a class="sourceLine" id="cb41-4" title="4">n &lt;-<span class="st"> </span><span class="kw">length</span>(sample.id)</a>
-<a class="sourceLine" id="cb41-5" title="5"><span class="kw">set.seed</span>(<span class="dv">35</span>)</a>
-<a class="sourceLine" id="cb41-6" title="6">time &lt;-<span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">mean=</span><span class="dv">100</span>, <span class="dt">sd=</span><span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb41-7" title="7"><span class="kw">set.seed</span>(<span class="dv">36</span>)</a>
-<a class="sourceLine" id="cb41-8" title="8">status &lt;-<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.4</span>)</a>
-<a class="sourceLine" id="cb41-9" title="9">pheno &lt;-<span class="st"> </span><span class="kw">data.frame</span>(family.id, sample.id, time, status,</a>
-<a class="sourceLine" id="cb41-10" title="10">                    <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb41-11" title="11"><span class="kw">head</span>(pheno)</a></code></pre></div>
+<p>We create a data.frame of simulated time-to-event outcomes. The first
+two columns of the data.frame are expected to be family id and sample
+(individual) id.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>sample.id <span class="ot">&lt;-</span> <span class="fu">seqGetData</span>(seq, <span class="st">&quot;sample.id&quot;</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>family.id <span class="ot">&lt;-</span> <span class="fu">seqGetData</span>(seq, <span class="st">&quot;sample.annotation/family&quot;</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>family.id[family.id <span class="sc">==</span> <span class="st">&quot;&quot;</span>] <span class="ot">&lt;-</span> sample.id[family.id <span class="sc">==</span> <span class="st">&quot;&quot;</span>]</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(sample.id)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">35</span>)</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="at">mean=</span><span class="dv">100</span>, <span class="at">sd=</span><span class="dv">10</span>)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">36</span>)</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>status <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.4</span>)</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>pheno <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(family.id, sample.id, time, status,</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>                    <span class="at">stringsAsFactors=</span><span class="cn">FALSE</span>)</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pheno)</span></code></pre></div>
 <pre><code>##   family.id sample.id      time status
 ## 1      1328   NA06984 110.65125      1
 ## 2   NA06985   NA06985 101.32881      1
@@ -449,22 +518,27 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 4      1328   NA06989  99.55024      0
 ## 5      1340   NA06994 133.37838      1
 ## 6      1340   NA07000  96.07082      0</code></pre>
-<p>The SeqArray package allows for pre-selecting variants using the <code>seqSetFilter</code> function. We set <code>type=&#39;bd&#39;</code> since <code>sigma</code> is a block diagonal matrix.</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" title="1"><span class="kw">seqSetFilter</span>(seq, <span class="dt">variant.sel=</span><span class="dv">1</span><span class="op">:</span><span class="dv">100</span>)</a></code></pre></div>
+<p>The SeqArray package allows for pre-selecting variants using the
+<code>seqSetFilter</code> function. We set <code>type=&#39;bd&#39;</code> since
+<code>sigma</code> is a block diagonal matrix.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">seqSetFilter</span>(seq, <span class="at">variant.sel=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)</span></code></pre></div>
 <pre><code>## # of selected variants: 100</code></pre>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" title="1">re &lt;-<span class="st"> </span><span class="kw">coxmeg_gds</span>(seq, pheno, sigma, <span class="dt">type=</span><span class="st">&#39;bd&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>re <span class="ot">&lt;-</span> <span class="fu">coxmeg_gds</span>(seq, pheno, sigma, <span class="at">type=</span><span class="st">&#39;bd&#39;</span>)</span></code></pre></div>
 <pre><code>## There are 90 subjects who have genotype data and have no missing phenotype or covariates.</code></pre>
 <pre><code>## Remove 3 subjects censored before the first failure.</code></pre>
 <pre><code>## There is/are 0 covariates. The sample size included is 87.</code></pre>
-<pre><code>## The relatedness matrix is treated as sparse.</code></pre>
+<pre><code>## The correlation matrix is treated as sparse/block diagonal.</code></pre>
 <pre><code>## The relatedness matrix is inverted.</code></pre>
 <pre><code>## The method for computing the determinant is &#39;diagonal&#39;.</code></pre>
 <pre><code>## Solver: Cholesky decomposition (RcppEigen=TRUE).</code></pre>
 <pre><code>## The variance component is estimated. Start analyzing SNPs...</code></pre>
 <pre><code>## # of selected samples: 87
+## 
+[..................................................]  0%, ETC: ---    
+[==================================================] 100%, completed, 0s
 ## # of selected variants: 3</code></pre>
 <pre><code>## The order is set to be 2.</code></pre>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" title="1"><span class="kw">head</span>(re<span class="op">$</span>summary)</a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(re<span class="sc">$</span>summary)</span></code></pre></div>
 <pre><code>##    snp.id chromosome  position allele      afreq  afreq_inc index       beta
 ## 9       9          1  34435767    G/A 0.85555556 0.85057471     9 -0.4738578
 ## 56     56          1  89618740    C/T 0.90000000 0.89655172    56  0.6003386
@@ -473,9 +547,23 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ## 9  0.6225958 0.3507818 0.176739691
 ## 56 1.8227359 0.4426871 0.175059724
 ## 93 2.6926010 0.3786899 0.008906643</code></pre>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" title="1"><span class="kw">seqClose</span>(seq)</a></code></pre></div>
-<p>In this vignette we presented two examples, each using a different GDS file type and method of creating a random effects matrix. We note that the choice of random effects matrix in each case was arbitrary; and either method of generating the matrix would work with either GDS file type.</p>
-<p>The code in <code>coxmeg_gds</code> is very similar to the code in <code>coxmeg_plink</code>, as the latter function converts the plink file to GDS before reading genotypes. <code>coxmeg_gds</code> takes R objects as arguments for phenotypes, covariates, and a connection to the GDS file; while <code>coxmeg_plink</code> takes paths to files on disk. If the user intends to utilize any other functions requiring a GDS object, or to run multiple analyses on the same dataset, it will be more efficient to convert a plink file to GDS first with the SNPRelate function <code>snpgdsBED2GDS</code> (or the SeqArray function <code>seqBED2GDS</code>), then use <code>coxmeg_gds</code> instead of <code>coxmeg_plink</code>.</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">seqClose</span>(seq)</span></code></pre></div>
+<p>In this vignette we presented two examples, each using a different
+GDS file type and method of creating a random effects matrix. We note
+that the choice of random effects matrix in each case was arbitrary; and
+either method of generating the matrix would work with either GDS file
+type.</p>
+<p>The code in <code>coxmeg_gds</code> is very similar to the code in
+<code>coxmeg_plink</code>, as the latter function converts the plink
+file to GDS before reading genotypes. <code>coxmeg_gds</code> takes R
+objects as arguments for phenotypes, covariates, and a connection to the
+GDS file; while <code>coxmeg_plink</code> takes paths to files on disk.
+If the user intends to utilize any other functions requiring a GDS
+object, or to run multiple analyses on the same dataset, it will be more
+efficient to convert a plink file to GDS first with the SNPRelate
+function <code>snpgdsBED2GDS</code> (or the SeqArray function
+<code>seqBED2GDS</code>), then use <code>coxmeg_gds</code> instead of
+<code>coxmeg_plink</code>.</p>
 </div>
 
 

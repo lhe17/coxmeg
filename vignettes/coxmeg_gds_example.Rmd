@@ -92,9 +92,13 @@ seq <- seqOpen(seqfile)
 As an alternate method of creating a random effects matrix, we use the KING algorithm to estimate pairwise relatedness, and use the GENESIS package to transform the results into a sparse block-diagonal matrix. The threshold chosen corresponds to setting values for pairs less closely related than second-degree relatives to 0. We multiply the matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is the kinship coefficient for identical genomes).
 
 ```{r}
-king <- snpgdsIBDKING(seq, verbose=FALSE)
-sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
-sigma[1:5,1:5]
+library(GENESIS)
+if(requireNamespace('GENESIS', quietly = TRUE))
+{
+  king <- snpgdsIBDKING(seq, verbose=FALSE)
+  sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
+  sigma[1:5,1:5]
+}
 ```
 
 We create a data.frame of simulated time-to-event outcomes. The first two columns of the data.frame are expected to be family id and sample (individual) id.

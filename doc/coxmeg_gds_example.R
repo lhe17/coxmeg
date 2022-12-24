@@ -46,9 +46,13 @@ seqfile <- seqExampleFileName()
 seq <- seqOpen(seqfile)
 
 ## -----------------------------------------------------------------------------
-king <- snpgdsIBDKING(seq, verbose=FALSE)
-sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
-sigma[1:5,1:5]
+library(GENESIS)
+if(requireNamespace('GENESIS', quietly = TRUE))
+{
+  king <- snpgdsIBDKING(seq, verbose=FALSE)
+  sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
+  sigma[1:5,1:5]
+}
 
 ## -----------------------------------------------------------------------------
 sample.id <- seqGetData(seq, "sample.id")

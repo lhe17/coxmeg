@@ -6,6 +6,9 @@
 # write.bibtex(file="references.bib")
 
 ## ----eval=FALSE---------------------------------------------------------------
+#  install.packages("coxmeg")
+
+## ----eval=FALSE---------------------------------------------------------------
 #  install.packages("devtools")
 #  library(devtools)
 #  install_github("lhe17/coxmeg")
@@ -23,8 +26,7 @@ for(i in 1:n_f)
   mat_list[[i]] <- matrix(offd,size[i],size[i])
   diag(mat_list[[i]]) <- 1
 }
-sigma <- as.matrix(bdiag(mat_list))
-sigma = as(sigma,'dgCMatrix')
+sigma = as(bdiag(mat_list),'dgCMatrix')
 
 
 ## ----echo=TRUE----------------------------------------------------------------
@@ -103,5 +105,34 @@ re
 ## ----echo=TRUE----------------------------------------------------------------
 sigma[2,1] = sigma[1,2] = 1
 re = coxmeg_plink(pheno,sigma,type='bd',cov_file=cov,verbose=FALSE,spd=FALSE)
+re
+
+## ----echo=TRUE----------------------------------------------------------------
+## building two relatedness matrices and put them in a List
+n_f <- 200
+mat_list <- list()
+size <- rep(5,n_f)
+offd <- 0.5
+for(i in 1:n_f)
+{
+  mat_list[[i]] <- matrix(offd,size[i],size[i])
+  diag(mat_list[[i]]) <- 1
+}
+sigma = as(bdiag(mat_list),'dgCMatrix')
+
+n_f <- 500
+mat_list <- list()
+size <- rep(2,n_f)
+offd <- 0.9
+for(i in 1:n_f)
+{
+  mat_list[[i]] <- matrix(offd,size[i],size[i])
+  diag(mat_list[[i]]) <- 1
+}
+sigma2 = as(bdiag(mat_list),'dgCMatrix')
+sigmas <- list(sigma,sigma2)
+
+## run coxmeg
+re = coxmeg(outcome,sigmas,type='bd',X=pred,order=1,detap='diagonal')
 re
 

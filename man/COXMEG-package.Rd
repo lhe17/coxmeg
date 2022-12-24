@@ -18,7 +18,7 @@ coxmeg is an R package for efficiently conducting GWAS of age-at-onset traits us
 Maintainer: \packageMaintainer{coxmeg}
 }
 \references{
-He. L, Kulminski, A.M., Genome-wide association analysis of age-at-onset traits using Cox mixed-effects models. 2019 
+He, L., & Kulminski, A. M. (2020). Fast algorithms for conducting large-scale GWAS of age-at-onset traits using cox mixed-effects models. Genetics, 215(1), 41-58. 
 }
 
 \keyword{ package }

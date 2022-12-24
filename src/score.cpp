@@ -12,16 +12,14 @@ typedef Eigen::Map<Eigen::VectorXd> MapVecd;
 typedef Eigen::Map<Eigen::MatrixXd> MapMatd;
 typedef Eigen::MappedSparseMatrix<double> MSpMat;
 
-// simple example of creating two matrices and
-// returning the result of an operatioon on them
 //
 // via the exports attribute we tell Rcpp to make this function
 // available from R
 
 // [[Rcpp::export]]
-Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd> w_v, const Eigen::MatrixXd & mx, const Eigen::Map<Eigen::VectorXd> rs_rs, 
-                      const Eigen::Map<Eigen::VectorXd> rs_cs,const Eigen::MatrixXi & ind, const Eigen::Map<Eigen::VectorXd> av) {
-  
+Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::MatrixXd & mx, const Eigen::Map<Eigen::VectorXd> & rs_rs, 
+                      const Eigen::Map<Eigen::VectorXd> & rs_cs,const Eigen::MatrixXi & ind, const Eigen::Map<Eigen::VectorXd> & av) {
+  // multiplication of the Lap matrix (dense part) and mx
   int nr = mx.rows();
   int nc = mx.cols();
   
@@ -50,9 +48,9 @@ Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd> w_v, const Eigen::Matrix
 
 
 // [[Rcpp::export]]
-Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eigen::VectorXd> cs_p, const Eigen::MatrixXi & ind,
-                       const Eigen::Map<Eigen::VectorXd> a) {
-  
+Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd> & w, const Eigen::Map<Eigen::VectorXd> & cs_p, const Eigen::MatrixXi & ind,
+                       const Eigen::Map<Eigen::VectorXd> & a) {
+  // the Lap matrix (dense part) 
   int n = w.size();
   
   Eigen::ArrayXd a2 = a.array()*a.array();
@@ -87,11 +85,11 @@ Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eig
 
 //
 // [[Rcpp::export]]
-Eigen::MatrixXd score_test(const Eigen::Map<Eigen::VectorXd> deriv, const Eigen::Map<Eigen::VectorXd> bw_v,
-               const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eigen::VectorXd> rs_rs,const Eigen::Map<Eigen::VectorXd> rs_cs,
-               const Eigen::Map<Eigen::VectorXd> cs_p, const Eigen::MatrixXi & ind,
-               const Eigen::Map<Eigen::VectorXd> a, const Eigen::Map<Eigen::VectorXd> a2, const Eigen::VectorXd & tau, 
-               const Eigen::Map<Eigen::MatrixXd> v,const Eigen::MatrixXd & cov, const Eigen::MatrixXd & x) {
+Eigen::MatrixXd score_test(const Eigen::Map<Eigen::VectorXd> & deriv, const Eigen::Map<Eigen::VectorXd> & bw_v,
+               const Eigen::Map<Eigen::VectorXd> &  w, const Eigen::Map<Eigen::VectorXd> & rs_rs,const Eigen::Map<Eigen::VectorXd> & rs_cs,
+               const Eigen::Map<Eigen::VectorXd> & cs_p, const Eigen::MatrixXi & ind,
+               const Eigen::Map<Eigen::VectorXd> & a, const Eigen::Map<Eigen::VectorXd> & a2, const Eigen::VectorXd & tau, 
+               const Eigen::Map<Eigen::MatrixXd> & v,const Eigen::MatrixXd & cov, const Eigen::MatrixXd & x) {
 
     int n = bw_v.size();
     int n_c = cov.cols();
@@ -120,168 +118,3 @@ Eigen::MatrixXd score_test(const Eigen::Map<Eigen::VectorXd> deriv, const Eigen:
     return tst;
 }
 
-// [[Rcpp::export]]
-double logdet_ch(const Eigen::MatrixXd & X_m, const Eigen::MatrixXd & rad_m, const Eigen::VectorXd & bma_d,
-                       const Eigen::VectorXd & bpa_d, const Eigen::VectorXd & cj_v) {
-  
-  int t = rad_m.cols();
-  int q = cj_v.size();
-  
-  double app = 0;
-  double ratio = bpa_d[0]/bma_d[0];
-  
-  Eigen::MatrixXd u = cj_v[0]*rad_m;
-  Eigen::MatrixXd w0 = rad_m;
-  Eigen::MatrixXd w1 = 2/bma_d[0]*(X_m*rad_m) - ratio*rad_m;
-  Eigen::MatrixXd w2 = w1;
-  u = u+cj_v[1]*w1;
-  for(int j=2; j<q; j++)
-  {
-    w2 = 4/bma_d[0]*(X_m*w1) - w0 - 2*ratio*w1;
-    u = u + cj_v[j]*w2;
-    w0 = w1;
-    w1 = w2;
-  }
-  u = rad_m.array()*u.array();
-  app = u.sum()/t;
-  
-  return app;
-}
-
-// [[Rcpp::export]]
-double logdet_lanczos(const Eigen::Map<Eigen::MatrixXd> X_m, const Eigen::Map<Eigen::MatrixXd> rad_m, const Eigen::VectorXi & m_d) {
-  
-  int t = rad_m.cols();
-  int n = rad_m.rows();
-  int m = m_d[0];
-  
-  double logdet = 0;
-  
-  Eigen::MatrixXd v1;
-  Eigen::MatrixXd v2;
-  Eigen::ArrayXXd w(n,t);
-  Eigen::ArrayXXd alpha(m,t);
-  Eigen::ArrayXXd beta(m-1,t);
-  Eigen::ArrayXXd temp(n,t);
-  Eigen::MatrixXd T;
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-  
-  v1 = rad_m;
-  w = X_m*v1;
-  temp = w*v1.array();
-  alpha.row(0) = temp.colwise().sum();
-  w = w - v1.array().rowwise()*alpha.row(0);
-  
-  Eigen::VectorXd iter(t);
-  iter.fill(m);
-  for(int j=1;j<m;j++)
-  {
-    temp = w*w;
-    beta.row(j-1) = sqrt(temp.colwise().sum());
-    
-    for(int k=0;k<t;k++)
-    {
-      if(beta(j-1,k)<1e-10)
-      {
-        if(iter(k)==m)
-          iter(k) = j;
-      }
-    }
-    
-    v2 = w.rowwise()*beta.row(j-1).inverse();
-    
-    w = X_m*v2;
-    temp = w*v2.array();
-    alpha.row(j) = temp.colwise().sum();
-    w = w - v2.array().rowwise()*alpha.row(j) - v1.array().rowwise()*beta.row(j-1);
-    v1 = v2;
-  }
-  
-  for(int i = 0; i<t; i++)
-  { 
-    int it = iter(i);
-    T = Eigen::MatrixXd::Zero(it,it);
-    T.diagonal() = alpha.col(i).head(it);
-    if(it>1)
-    {
-      T.diagonal(1) = beta.col(i).head(it-1);
-      T.diagonal(-1) = beta.col(i).head(it-1);
-    }
-    es.compute(T);
-    Eigen::ArrayXd eivt = Eigen::square(es.eigenvectors().row(0).array());
-    Eigen::ArrayXd eivl = Eigen::log(es.eigenvalues().array());
-    eivl = eivt*eivl;
-    logdet = logdet + eivl.sum();
-  }
-  
-  return logdet*n/t;
-}
-
-// [[Rcpp::export]]
-double logdet_lanczos_sp(const Eigen::MappedSparseMatrix<double> X_m, const Eigen::Map<Eigen::MatrixXd> rad_m, const Eigen::VectorXi & m_d) {
-  
-  int t = rad_m.cols();
-  int n = rad_m.rows();
-  int m = m_d[0];
-  
-  double logdet = 0;
-  
-  Eigen::MatrixXd v1;
-  Eigen::MatrixXd v2;
-  Eigen::ArrayXXd w(n,t);
-  Eigen::ArrayXXd alpha(m,t);
-  Eigen::ArrayXXd beta(m-1,t);
-  Eigen::ArrayXXd temp(n,t);
-  Eigen::MatrixXd T;
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-  
-  v1 = rad_m;
-  w = X_m*v1;
-  temp = w*v1.array();
-  alpha.row(0) = temp.colwise().sum();
-  w = w - v1.array().rowwise()*alpha.row(0);
-  
-  Eigen::VectorXd iter(t);
-  iter.fill(m);
-  for(int j=1;j<m;j++)
-  {
-    temp = w*w;
-    beta.row(j-1) = sqrt(temp.colwise().sum());
-    
-    for(int k=0;k<t;k++)
-    {
-      if(beta(j-1,k)<1e-10)
-      {
-        if(iter(k)==m)
-          iter(k) = j;
-      }
-    }
-    
-    v2 = w.rowwise()*beta.row(j-1).inverse();
-    
-    w = X_m*v2;
-    temp = w*v2.array();
-    alpha.row(j) = temp.colwise().sum();
-    w = w - v2.array().rowwise()*alpha.row(j) - v1.array().rowwise()*beta.row(j-1);
-    v1 = v2;
-  }
-  
-  for(int i = 0; i<t; i++)
-  { 
-    int it = iter(i);
-    T = Eigen::MatrixXd::Zero(it,it);
-    T.diagonal() = alpha.col(i).head(it);
-    if(it>1)
-    {
-      T.diagonal(1) = beta.col(i).head(it-1);
-      T.diagonal(-1) = beta.col(i).head(it-1);
-    }
-    es.compute(T);
-    Eigen::ArrayXd eivt = Eigen::square(es.eigenvectors().row(0).array());
-    Eigen::ArrayXd eivl = Eigen::log(es.eigenvalues().array());
-    eivl = eivt*eivl;
-    logdet = logdet + eivl.sum();
-  }
-  
-  return logdet*n/t;
-}

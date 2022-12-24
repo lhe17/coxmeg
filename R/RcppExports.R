@@ -13,6 +13,38 @@ logdeth <- function(A, dv, bw_v, w, cs_p, v4, a, tau, inv, detap) {
     .Call('_coxmeg_logdeth', PACKAGE = 'coxmeg', A, dv, bw_v, w, cs_p, v4, a, tau, inv, detap)
 }
 
+logdethmcmdense <- function(A, dv, bw_v, w, cs_p, v4, a) {
+    .Call('_coxmeg_logdethmcmdense', PACKAGE = 'coxmeg', A, dv, bw_v, w, cs_p, v4, a)
+}
+
+logdet_ch <- function(X_m, rad_m, bma_d, bpa_d, cj_v) {
+    .Call('_coxmeg_logdet_ch', PACKAGE = 'coxmeg', X_m, rad_m, bma_d, bpa_d, cj_v)
+}
+
+logdet_lanczos <- function(X_m, rad_m, m_d) {
+    .Call('_coxmeg_logdet_lanczos', PACKAGE = 'coxmeg', X_m, rad_m, m_d)
+}
+
+wma_mv <- function(X_m, w_v, rs_rs, rs_cs, ind, av2, n, t) {
+    .Call('_coxmeg_wma_mv', PACKAGE = 'coxmeg', X_m, w_v, rs_rs, rs_cs, ind, av2, n, t)
+}
+
+logdet_gkb <- function(X_m, bw_v, tau, w_v, rs_rs, rs_cs, ind, av2, rad_m, m_d) {
+    .Call('_coxmeg_logdet_gkb', PACKAGE = 'coxmeg', X_m, bw_v, tau, w_v, rs_rs, rs_cs, ind, av2, rad_m, m_d)
+}
+
+logdet_lanczos_sp <- function(X_m, rad_m, m_d) {
+    .Call('_coxmeg_logdet_lanczos_sp', PACKAGE = 'coxmeg', X_m, rad_m, m_d)
+}
+
+logdet_gkb_sp <- function(X_m, rad_m, m_d) {
+    .Call('_coxmeg_logdet_gkb_sp', PACKAGE = 'coxmeg', X_m, rad_m, m_d)
+}
+
+logdet_gkb_dense <- function(X_m, rad_m, m_d) {
+    .Call('_coxmeg_logdet_gkb_dense', PACKAGE = 'coxmeg', X_m, rad_m, m_d)
+}
+
 pcg_dense <- function(A, B, tol) {
     .Call('_coxmeg_pcg_dense', PACKAGE = 'coxmeg', A, B, tol)
 }
@@ -35,17 +67,5 @@ wma_cp <- function(w, cs_p, ind, a) {
 
 score_test <- function(deriv, bw_v, w, rs_rs, rs_cs, cs_p, ind, a, a2, tau, v, cov, x) {
     .Call('_coxmeg_score_test', PACKAGE = 'coxmeg', deriv, bw_v, w, rs_rs, rs_cs, cs_p, ind, a, a2, tau, v, cov, x)
-}
-
-logdet_ch <- function(X_m, rad_m, bma_d, bpa_d, cj_v) {
-    .Call('_coxmeg_logdet_ch', PACKAGE = 'coxmeg', X_m, rad_m, bma_d, bpa_d, cj_v)
-}
-
-logdet_lanczos <- function(X_m, rad_m, m_d) {
-    .Call('_coxmeg_logdet_lanczos', PACKAGE = 'coxmeg', X_m, rad_m, m_d)
-}
-
-logdet_lanczos_sp <- function(X_m, rad_m, m_d) {
-    .Call('_coxmeg_logdet_lanczos_sp', PACKAGE = 'coxmeg', X_m, rad_m, m_d)
 }
 

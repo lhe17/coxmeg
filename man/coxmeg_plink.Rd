@@ -30,7 +30,7 @@ coxmeg_plink(
 \arguments{
 \item{pheno}{A string value indicating the file name or the full path of a pheno file. The files must be in the working directory if the full path is not given. The file is in plink pheno format, containing the following four columns, family ID, individual ID, time and status. The status is a binary variable (1 for events/0 for censored).}
 
-\item{corr}{A relatedness matrix. Can be a matrix or a 'dgCMatrix' class in the Matrix package. Must be symmetric positive definite or symmetric positive semidefinite.}
+\item{corr}{A relatedness matrix or a List object of matrices if there are multiple relatedness matrices. They can be a matrix or a 'dgCMatrix' class in the Matrix package. The matrix (or the sum if there are multiple) must be symmetric positive definite or symmetric positive semidefinite. The order of subjects must be consistent with that in pheno.}
 
 \item{type}{A string indicating the sparsity structure of the relatedness matrix. Should be 'bd' (block diagonal), 'sparse', or 'dense'. See details.}
 
@@ -40,7 +40,7 @@ coxmeg_plink(
 
 \item{cov_file}{An optional string value indicating the file name or the full path of a covariate file. The files must be in the working directory if the full path is not given. Same as the cov file in plink, the first two columns are family ID and individual ID. The covariates are included in the null model for estimating the variance component. The covariates can be quantitative or binary values. Categorical variables need to be converted to dummy variables.}
 
-\item{tau}{An optional positive value for the variance component. If tau is given, the function will skip estimating the variance component, and use the given tau to analyze the SNPs.}
+\item{tau}{An optional positive value or vector for the variance component(s). If tau is given, the function will skip estimating the variance component, and use the given tau to analyze the SNPs.}
 
 \item{maf}{An optional positive value. All SNPs with MAF<maf in the bed file will not be analyzed. Default is 0.05.}
 
@@ -52,9 +52,9 @@ coxmeg_plink(
 
 \item{order}{An optional integer value starting from 0. Only effective when \code{dense=FALSE}. It specifies the order of approximation used in the inexact newton method. Default is NULL, which lets coxmeg choose an optimal order.}
 
-\item{detap}{An optional string indicating whether to use approximation for log-determinant. Can be 'exact', 'diagonal' or 'slq'. Default is NULL, which lets the function select a method based on 'type' and other information. See details.}
+\item{detap}{An optional string indicating whether to use an approximation for log-determinant. Can be 'exact', 'diagonal', 'gkb', or 'slq'. Default is NULL, which lets the function select a method based on 'type' and other information. See details.}
 
-\item{opt}{An optional string value for the Optimization algorithm for tau. Can have the following values: 'bobyqa', 'Brent' or 'NM'. Default is 'bobyqa'.}
+\item{opt}{An optional logical scalar for the Optimization algorithm for estimating the variance component(s). Can be one of the following values: 'bobyqa', 'Brent', 'NM', or 'L-BFGS-B' (only for >1 variance components). Default is 'bobyqa'.}
 
 \item{score}{An optional logical value indicating whether to perform a score test. Default is FALSE.}
 
@@ -64,7 +64,7 @@ coxmeg_plink(
 
 \item{spd}{An optional logical value indicating whether the relatedness matrix is symmetric positive definite. Default is TRUE. See details.}
 
-\item{mc}{An optional integer value specifying the number of Monte Carlo samples used for approximating the log-determinant. Only valid when \code{dense=TRUE} and \code{detap='slq'}. Default is 100.}
+\item{mc}{An optional integer scalar specifying the number of Monte Carlo samples used for approximating the log-determinant when \code{detap='gkb'} or \code{detap='slq'}. Default is 100.}
 
 \item{verbose}{An optional logical value indicating whether to print additional messages. Default is TRUE.}
 }
@@ -86,11 +86,6 @@ nsam: Actual sample size.
 \description{
 \code{coxmeg_plink} first estimates the variance component under a null model with only cov if tau is not given, and then analyzing each SNP in the plink files.
 }
-\section{About \code{type}}{
-
-'bd' is used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. 'sparse' is used for a general sparse relatedness matrix the inverse of which is not sparse.
-}
-
 \section{About \code{corr}}{
 
 The subjects in \code{corr} must be in the same order as in the plink fam file.
@@ -106,19 +101,39 @@ The subjects in \code{corr} must be in the same order as in the plink fam file.
 The function will create a temporary gds file with approximately the same size as the bed file. The temporary file will be removed when the analysis is done.
 }
 
+\section{About \code{type}}{
+
+Specifying the type of the relatedness matrix (whether it is block-diagonal, general sparse, or dense). In the case of multiple relatedness matrices, it refers to the type of the sum of these matrices.
+\itemize{ 
+\item{"bd"}{ - used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. }
+\item{"sparse"}{ - used for a general sparse relatedness matrix the inverse of which is not sparse.}
+\item{"dense"}{ - used for a dense relatedness matrix.}
+}
+}
+
 \section{About \code{spd}}{
 
-When \code{spd=TRUE}, the relatedness matrix is treated as SPD. If the matrix is SPSD or not sure, set \code{spd=FALSE}.
+When \code{spd=TRUE}, the relatedness matrix is treated as SPD. If the matrix is SPSD or not sure, use \code{spd=FALSE}.
 }
 
 \section{About \code{solver}}{
 
-When \code{solver=1,3}/\code{solver=2}, Cholesky decompositon/PCG is used to solve the linear system. When \code{solver=3}, the solve function in the Matrix package is used, and when \code{solver=1}, it uses RcppEigen:LDLT to solve linear systems. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.
+Specifying which method is used to solve the linear system in the optimization algorithm.  
+\itemize{ 
+\item{"1"}{ - Cholesky decompositon (RcppEigen:LDLT) is used to solve the linear system.}
+\item{"2"}{ - PCG is used to solve the linear system. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.}
+}
 }
 
 \section{About \code{detap}}{
 
-When \code{detap='exact'}, the exact log-determinant is computed for estimating the variance component. Specifying \code{detap='diagonal'} uses diagonal approximation, and is only effective for a sparse relatedness matrix. Specifying \code{detap='slq'} uses stochastic lanczos quadrature approximation.
+Specifying the method to compute the log-determinant for estimating the variance component(s).
+\itemize{ 
+\item{"exact"}{ - the exact log-determinant is computed for estimating the variance component.}
+\item{"diagonal"}{ - uses diagonal approximation and is only effective for a sparse relatedness matrix.}
+\item{"slq"}{ - uses stochastic lanczos quadrature approximation. It uses the Lanczos algorithm to compute the weights and nodes. When type is 'bd' or 'sparse', it is often faster than 'gkb' and has the same accuracy. When type='dense', it is fater than 'gkb' by around half, but can be inaccurate if the relatedness matrix is (almost) singular.}
+\item{"gkb"}{ - uses stochastic lanczos quadrature approximation. It uses the Golub-Kahan bidiagonalization algorithm to compute the weights and nodes. It is robust against an (almost) singular relatedness matrix when type='dense', but it is generally slower than 'slq'.}  
+}
 }
 
 \examples{

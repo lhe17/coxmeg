@@ -1,5 +1,4 @@
-Overview
---------
+## Overview
 
 In addition to the functions described in the main coxmeg vignette, the
 `coxmeg_gds` function allows running coxmeg directly on Genomic Data
@@ -13,24 +12,14 @@ sequencing was designed to import all data stored in VCF files. An
 interface to the sequencing format is defined in the SeqArray package.
 `coxmeg_gds` supports both file types.
 
-SNPRelate example
------------------
+## SNPRelate example
 
 In the first example, we use an original GDS file and open it with the
 SNPRelate package.
 
     library(coxmeg)
-
-    ## Warning: package 'Rcpp' was built under R version 3.6.2
-
     library(gdsfmt)
-
-    ## Warning: package 'gdsfmt' was built under R version 3.6.1
-
     library(SNPRelate)
-
-    ## Warning: package 'SNPRelate' was built under R version 3.6.1
-
     snpfile <- snpgdsExampleFileName()
     snp <- snpgdsOpen(snpfile)
 
@@ -116,12 +105,13 @@ The GRM is a dense matrix and not postive definite, so we set
 
     ## Remove 0 subjects censored before the first failure.
 
-    ## Warning in chol.default(x, pivot = TRUE): the matrix is either rank-deficient or
-    ## indefinite
+    ## There is/are 4 covariates. The sample size included is 279.
 
-    ## There is/are 4 covariates. The sample size included is 279. The rank of the relatedness matrix is 276
+    ## Warning in coxmeg_gds(snp, pheno, sigma, type = "dense", cov = cov, snp.id =
+    ## snp.id[1:100], : The relatedness matrix has negative eigenvalues. Please use a
+    ## positive (semi)definite matrix.
 
-    ## The relatedness matrix is treated as dense.
+    ## The correlation matrix is treated as dense.
 
     ## The relatedness matrix is inverted.
 
@@ -129,9 +119,8 @@ The GRM is a dense matrix and not postive definite, so we set
 
     ## Solver: PCG (RcppEigen:dense).
 
-    ## Warning in coxmeg_gds(snp, pheno, sigma, type = "dense", cov = cov, snp.id
-    ## = snp.id[1:100], : The estimated variance component equals the lower bound
-    ## (1e-04), probably suggesting no random effects.
+    ## Warning in check_tau(tau_e, min_tau, max_tau, ncm): The estimated variance
+    ## component equals the lower bound (1e-04), probably suggesting no random effects.
 
     ## The variance component is estimated. Start analyzing SNPs...
 
@@ -156,16 +145,12 @@ The GRM is a dense matrix and not postive definite, so we set
 
     snpgdsClose(snp)
 
-SeqArray example
-----------------
+## SeqArray example
 
 In this example, we use a sequencing GDS file and open it with the
 SeqArray package.
 
     library(SeqArray)
-
-    ## Warning: package 'SeqArray' was built under R version 3.6.2
-
     seqfile <- seqExampleFileName()
     seq <- seqOpen(seqfile)
 
@@ -177,8 +162,13 @@ closely related than second-degree relatives to 0. We multiply the
 matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is
 the kinship coefficient for identical genomes).
 
-    king <- snpgdsIBDKING(seq, verbose=FALSE)
-    sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
+    library(GENESIS)
+    if(requireNamespace('GENESIS', quietly = TRUE))
+    {
+      king <- snpgdsIBDKING(seq, verbose=FALSE)
+      sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
+      sigma[1:5,1:5]
+    }
 
     ## Using 90 samples provided
 
@@ -191,8 +181,6 @@ the kinship coefficient for identical genomes).
     ## 74 samples with no relatives included
 
     ## Putting all samples together into one block diagonal matrix
-
-    sigma[1:5,1:5]
 
     ## 5 x 5 sparse Matrix of class "dsCMatrix"
     ##           NA06984   NA06989   NA12156  NA11832  NA12249
@@ -242,7 +230,9 @@ diagonal matrix.
 
     ## There is/are 0 covariates. The sample size included is 87.
 
-    ## The relatedness matrix is treated as sparse.
+    ## as(<dsCMatrix>, "dgCMatrix") is deprecated since Matrix 1.5-0; do as(., "generalMatrix") instead
+
+    ## The correlation matrix is treated as sparse/block diagonal.
 
     ## The relatedness matrix is inverted.
 
@@ -253,6 +243,7 @@ diagonal matrix.
     ## The variance component is estimated. Start analyzing SNPs...
 
     ## # of selected samples: 87
+    ## [..................................................]  0%, ETC: ---    [==================================================] 100%, completed, 0s
     ## # of selected variants: 3
 
     ## The order is set to be 2.

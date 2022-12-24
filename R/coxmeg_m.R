@@ -4,33 +4,47 @@
 #' \code{coxmeg_m} first estimates the variance component under a null model with only cov, and then analyzing each predictor in X one by one.
 #' 
 #' @section About \code{type}:
-#' 'bd' is used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. 'sparse' is used for a general sparse relatedness matrix the inverse of which is not sparse. 
+#' Specifying the type of the relatedness matrix (whether it is block-diagonal, general sparse, or dense). In the case of multiple relatedness matrices, it refers to the type of the sum of these matrices.
+#' \itemize{ 
+#' \item{"bd"}{ - used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. }
+#' \item{"sparse"}{ - used for a general sparse relatedness matrix the inverse of which is not sparse.}
+#' \item{"dense"}{ - used for a dense relatedness matrix.}
+#' }
 #' @section About \code{spd}:
 #' When \code{spd=TRUE}, the relatedness matrix is treated as SPD. If the matrix is SPSD or not sure, use \code{spd=FALSE}.
 #' @section About \code{solver}:
-#' When \code{solver=1,3}/\code{solver=2}, Cholesky decompositon/PCG is used to solve the linear system. When \code{solver=3}, the solve function in the Matrix package is used, and when \code{solver=1}, it uses RcppEigen:LDLT to solve linear systems. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.
+#' Specifying which method is used to solve the linear system in the optimization algorithm.  
+#' \itemize{ 
+#' \item{"1"}{ - Cholesky decompositon (RcppEigen:LDLT) is used to solve the linear system.}
+#' \item{"2"}{ - PCG is used to solve the linear system. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.}
+#' }
 #' @section About \code{detap}:
-#' When \code{detap='exact'}, the exact log-determinant is computed for estimating the variance component. Specifying \code{detap='diagonal'} uses diagonal approximation, and is only effective for a sparse relatedness matrix. Specifying \code{detap='slq'} uses stochastic lanczos quadrature approximation.
+#' Specifying the method to compute the log-determinant for estimating the variance component(s).
+#' \itemize{ 
+#' \item{"exact"}{ - the exact log-determinant is computed for estimating the variance component.}
+#' \item{"diagonal"}{ - uses diagonal approximation and is only effective for a sparse relatedness matrix.}
+#' \item{"slq"}{ - uses stochastic lanczos quadrature approximation. It uses the Lanczos algorithm to compute the weights and nodes. When type is 'bd' or 'sparse', it is often faster than 'gkb' and has the same accuracy. When type='dense', it is fater than 'gkb' by around half, but can be inaccurate if the relatedness matrix is (almost) singular.}
+#' \item{"gkb"}{ - uses stochastic lanczos quadrature approximation. It uses the Golub-Kahan bidiagonalization algorithm to compute the weights and nodes. It is robust against an (almost) singular relatedness matrix when type='dense', but it is generally slower than 'slq'.}  
+#' }
 #' 
 #' @param outcome A matrix contains time (first column) and status (second column). The status is a binary variable (1 for failure / 0 for censored).
-#' @param corr A relatedness matrix. Can be a matrix or a 'dgCMatrix' class in the Matrix package. Must be symmetric positive definite or symmetric positive semidefinite.
+#' @param corr A relatedness matrix or a List object of matrices if there are multiple relatedness matrices. They can be a matrix or a 'dgCMatrix' class in the Matrix package. The matrix (or the sum if there are multiple) must be symmetric positive definite or symmetric positive semidefinite. The order of subjects must be consistent with that in outcome.
 #' @param X A matrix of the preidctors. Can be quantitative or binary values. Categorical variables need to be converted to dummy variables. Each row is a sample, and the predictors are columns.
 #' @param type A string indicating the sparsity structure of the relatedness matrix. Should be 'bd' (block diagonal), 'sparse', or 'dense'. See details.
 #' @param cov An optional matrix of the covariates included in the null model for estimating the variance component. Can be quantitative or binary values. Categorical variables need to be converted to dummy variables. Each row is a sample, and the covariates are columns. 
-#' @param FID An optional string vector of family ID. If provided, the data will be reordered according to the family ID.
-#' @param tau An optional positive value for the variance component. If \code{tau} is given, the function will skip estimating the variance component, and use the given \code{tau} to analyze the predictors.
+#' @param tau An optional positive value or vector for the variance component(s). If \code{tau} is given, the function will skip estimating the variance component, and use the given \code{tau} to analyze the predictors.
 #' @param eps An optional positive value indicating the relative convergence tolerance in the optimization algorithm. Default is 1e-6. A smaller value (e.g., 1e-8) can be used for better precision of the p-values in the situation where most SNPs under investigation have a very low minor allele count (<5).
 #' @param min_tau An optional positive value indicating the lower bound in the optimization algorithm for the variance component \code{tau}. Default is 1e-4.
 #' @param max_tau An optional positive value indicating the upper bound in the optimization algorithm for the variance component \code{tau}. Default is 5.
-#' @param opt An optional logical value for the Optimization algorithm for tau. Can have the following values: 'bobyqa', 'Brent' or 'NM'. Default is 'bobyqa'.
+#' @param opt An optional logical scalar for the Optimization algorithm for estimating the variance component(s). Can be one of the following values: 'bobyqa', 'Brent', 'NM', or 'L-BFGS-B' (only for >1 variance components). Default is 'bobyqa'.
 #' @param spd An optional logical value indicating whether the relatedness matrix is symmetric positive definite. Default is TRUE. See details.
-#' @param detap An optional string indicating whether to use approximation for log-determinant. Can be 'exact', 'diagonal' or 'slq'. Default is NULL, which lets the function select a method based on 'type' and other information. See details.
+#' @param detap An optional string indicating whether to use an approximation for log-determinant. Can be 'exact', 'diagonal', 'gkb', or 'slq'. Default is NULL, which lets the function select a method based on 'type' and other information. See details.
 #' @param solver An optional bianry value that can be either 1 (Cholesky Decomposition using RcppEigen), 2 (PCG) or 3 (Cholesky Decomposition using Matrix). Default is NULL, which lets the function select a solver. See details.
 #' @param score An optional logical value indicating whether to perform a score test. Default is FALSE.
 #' @param order An optional integer value starting from 0. Only valid when \code{dense=FALSE}. It specifies the order of approximation used in the inexact newton method. Default is NULL, which lets coxmeg choose an optimal order.
 #' @param verbose An optional logical value indicating whether to print additional messages. Default is TRUE.
 #' @param threshold An optional non-negative value. If threshold>0, coxmeg_m will reestimate HRs for those SNPs with a p-value<threshold by first estimating a variant-specific variance component. Default is 0.
-#' @param mc An optional integer value specifying the number of Monte Carlo samples used for approximating the log-determinant. Only valid when \code{dense=TRUE} and \code{detap='slq'}. Default is 100.
+#' @param mc An optional integer scalar specifying the number of Monte Carlo samples used for approximating the log-determinant when \code{detap='gkb'} or \code{detap='slq'}. Default is 100.
 #' @return beta: The estimated coefficient for each predictor in X.
 #' @return HR: The estimated HR for each predictor in X.
 #' @return sd_beta: The estimated standard error of beta.
@@ -75,46 +89,37 @@
 #' re
 
 
-coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-04,max_tau=5,eps=1e-6,order=NULL,detap=NULL,opt='bobyqa',score=FALSE,threshold=0,solver=NULL,spd=TRUE,verbose=TRUE,mc=100){
+coxmeg_m <- function(X,outcome,corr,type,cov=NULL,tau=NULL,min_tau=1e-04,max_tau=5,eps=1e-6,order=NULL,detap=NULL,opt='bobyqa',score=FALSE,threshold=0,solver=NULL,spd=TRUE,verbose=TRUE,mc=100){
   
   if(eps<0)
   {eps <- 1e-6}
   
+  slqd <- 8
+  
   if(is.null(order))
   {order_t = 1}else{order_t = as.integer(order)}
   
-  if(!(type %in% c('bd','sparse','dense')))
-  {stop("The type argument should be 'bd', 'sparse' or 'dense'.")}
-  
-  if(!is.null(detap))
-  {
-    if(!(detap %in% c('exact','slq','diagonal')))
-    {stop("The detap argument should be 'exact', 'diagonal' or 'slq'.")}
-  }
-  
   X = as.matrix(X)
+  storage.mode(X) <- 'numeric'
   outcome <- as.matrix(outcome)
   if(is.null(cov)==FALSE)
   {cov = as.matrix(cov)}
   
-  nro = nrow(outcome)
-  if((nro!=nrow(corr)) || (nro!=ncol(corr)))
-  {stop("The phenotype and the relatedness matrix have different sample sizes.")}
+  ncm <- 1
+  if(is.list(corr))
+  {
+    ncm <- length(corr)
+    if(ncm==1)
+    {
+      corr <- corr[[1]]
+    }
+  }
   
+  check_input(outcome,corr,type,detap,ncm,spd)
+  
+  nro = nrow(outcome)
   if(nro!=nrow(X))
   {stop("The phenotype and predictor matrices have different sample sizes.")}
-  
-  ## family structure
-  if(is.null(FID)==FALSE)
-  {
-    ord <- order(FID)
-    FID <- as.character(FID[ord])
-    X <- as.matrix(X[ord,])
-    outcome <- as.matrix(outcome[ord,])
-    corr <- corr[ord,ord]
-    if(is.null(cov)==FALSE)
-    {cov <- as.matrix(cov[ord,])}
-  }
   
   min_d <- min(outcome[which(outcome[,2]==1),1])
   rem <- which((outcome[,2]==0)&(outcome[,1]<min_d))
@@ -122,7 +127,15 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
   {
     outcome <- outcome[-rem,,drop = FALSE]
     X <- as.matrix(X[-rem,,drop = FALSE])
-    corr <- corr[-rem,-rem,drop = FALSE]
+    if(ncm==1)
+    {
+      corr <- corr[-rem,-rem,drop = FALSE]
+    }else{
+      for(i in 1:ncm)
+      {
+        corr[[i]] <- corr[[i]][-rem,-rem,drop = FALSE]
+      }
+    }
     if(is.null(cov)==FALSE)
     {cov <- as.matrix(cov[-rem,,drop = FALSE])}
   }
@@ -131,8 +144,15 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
   {message(paste0('Remove ', length(rem), ' subjects censored before the first failure.'))}
   
   n <- nrow(outcome)
-  if(min(outcome[,2] %in% c(0,1))<1)
-  {stop("The status should be either 0 (censored) or 1 (failure).")}
+  
+  if(ncm==1)
+  {
+    nz <- nnzero(corr)
+  }else{
+    nz <- nnzero(Reduce('+',corr))
+  }
+  if( nz > ((as.double(n)^2)/2) )
+  {type <- 'dense'}
   
   p <- ncol(X)
   u <- rep(0,n)
@@ -169,170 +189,102 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
   ind <- order(outcome[,1])
   ind <- as.matrix(cbind(ind,order(ind)))
   rk <- rank(outcome[ind[,1],1],ties.method='min')
-  n1 <- sum(d_v>0)
-  
+  # n1 <- sum(d_v>0)
   rs <- rs_sum(rk-1,d_v[ind[,1]])
-  if(spd==FALSE)
-  {
-    rk_cor = matrix.rank(as.matrix(corr),method='chol')
-    spsd = FALSE
-    if(rk_cor<n)
-    {spsd = TRUE}
-    if(verbose==TRUE)
-    {message(paste0('There is/are ',k,' covariates. The sample size included is ',n,'. The rank of the relatedness matrix is ', rk_cor))}
-  }else{
-    spsd = FALSE
-    rk_cor = n
-    if(verbose==TRUE)
-    {message(paste0('There is/are ',k,' covariates. The sample size included is ',n,'.'))}
-  }
   
-  nz <- nnzero(corr)
-  if( nz > ((as.double(n)^2)/2) )
-  {type <- 'dense'}
+  spsd = FALSE
+  if(spd==FALSE)
+  {spsd = TRUE}
+  rk_cor = n
+  if(verbose==TRUE)
+  {message(paste0('There is/are ',k,' covariates. The sample size included is ',n,'.'))}
   
   eigen = TRUE
+  sigma_i_s <- NULL
   if(type=='dense')
   {
-    if(verbose==TRUE)
-    {message('The relatedness matrix is treated as dense.')}
-    corr = as.matrix(corr)
-    if(spsd==FALSE)
+    if(ncm==1)
     {
-      corr = chol(corr)
-      corr = as.matrix(chol2inv(corr))
-    }else{
-      ei = eigen(corr)
-      ei$values[ei$values<1e-10] = 1e-6
-      corr = ei$vectors%*%diag(1/ei$values)%*%t(ei$vectors)
-      # corr <- ginv(corr)
-      rk_cor = n
-      spsd = FALSE
-    }
-    inv <- TRUE
-    sigma_i_s = corr
-    corr = s_d = NULL
-    
-    si_d <- as.vector(diag(sigma_i_s))
-    
-    if(is.null(solver))
-    {solver = 2}else{
-      if(solver==3)
-      {solver = 1}
-    }
-    if(is.null(detap))
-    {
-      if(n<3000)
-      {detap = 'exact'}else{
-        detap = 'slq'
+      corr <- as.matrix(corr)
+      if(spsd==FALSE)
+      {
+        sigma_i_s = chol(corr)
+        sigma_i_s = as.matrix(chol2inv(sigma_i_s))
+      }else{
+        sigma_i_s = eigen(corr)
+        if(min(sigma_i_s$values) < -1e-10)
+        {
+          warning("The relatedness matrix has negative eigenvalues. Please use a positive (semi)definite matrix.")
+        }
+        npev <- which(sigma_i_s$values<1e-10)
+        if(length(npev)>0)
+        {
+          sigma_i_s$values[npev] = 1e-6
+        }
+        sigma_i_s = sigma_i_s$vectors%*%diag(1/sigma_i_s$values)%*%t(sigma_i_s$vectors)
+        
       }
+      s_d <- as.vector(diag(sigma_i_s))
+    }else{
+      for(i in 1:ncm)
+      {corr[[i]] <- as.matrix(corr[[i]])}
     }
+    
+    inv <- TRUE
+    
+    solver <- get_solver(solver,type,verbose)
+    
+    detap <- set_detap_dense(detap,n,spsd,ncm)
   }else{
-    if(verbose==TRUE)
-    {message('The relatedness matrix is treated as sparse.')}
-    corr <- as(corr, 'dgCMatrix')
+    if(ncm==1)
+    {corr <- as(corr, 'dgCMatrix')}
     si_d = s_d = NULL
     
-    if(spsd==FALSE)
+    if(spsd==TRUE)
     {
-      if(type=='bd')
+      minei <- rARPACK::eigs_sym(corr, 1, which = "SA")$values
+      if(minei < -1e-10)
       {
-        sigma_i_s <- Matrix::chol2inv(Matrix::chol(corr))
-        inv = TRUE
-        si_d <- as.vector(Matrix::diag(sigma_i_s))
-        if(is.null(detap))
-        {detap = 'diagonal'}
-      }else{
-        sigma_i_s = NULL
-        inv = FALSE
-        s_d <- as.vector(Matrix::diag(corr))
-        if(is.null(detap))
-        {
-          detap = 'slq'
-        }else{
-          if(detap=='exact')
-          {
-            detap = 'slq'
-            if(verbose==TRUE)
-            {message("detap=exact is not supported under this setting. The detap argument is changed to 'slq'.")}
-          }
-        }
+        stop("The relatedness matrix has negative eigenvalues. Please use a positive (semi)definite matrix.")
       }
-    }else{
-      sigma_i_s = eigen(corr)
-      if(min(sigma_i_s$values) < -1e-10)
-      {
-        stop("The relatedness matrix has negative eigenvalues.")
-      }
-      sigma_i_s$values[sigma_i_s$values<1e-10] = 1e-6
-      sigma_i_s = sigma_i_s$vectors%*%diag(1/sigma_i_s$values)%*%t(sigma_i_s$vectors)
+      if(minei<1e-10)
+      {Matrix::diag(corr) <- Matrix::diag(corr) + 1e-6}
       rk_cor = n
-      spsd = FALSE
-      inv = TRUE
-      si_d <- as.vector(Matrix::diag(sigma_i_s))
-      if(is.null(detap))
-      {
-        if(type=='bd')
-        {detap = 'diagonal'}else{
-          detap = 'slq'
-        }
-      }
     }
     
-    if(is.null(solver))
+    if(type=='bd')
     {
-      if(type=='bd')
+      # sigma_i_s <- NULL
+      if(ncm==1)
       {
-        solver = 1
-        if(n>5e4)
-        {
-          eigen = FALSE
-        }
-      }else{solver = 2}
+        corr <- Matrix::chol2inv(Matrix::chol(corr))
+        s_d <- as.vector(Matrix::diag(corr))
+        inv = TRUE
+      }else{
+        inv <- FALSE
+      }
     }else{
-      if(solver==3)
-      {
-        eigen = FALSE
-        solver = 1
-      }
+      # sigma_i_s = NULL
+      if(ncm==1)
+      {s_d <- as.vector(Matrix::diag(corr))}
+      inv = FALSE
     }
     
-    if(inv==TRUE)
+    detap <- set_detap_sparse(detap,type,verbose,ncm)
+    
+    solver <- get_solver(solver,type,verbose)
+    
+    if((inv==TRUE) & (ncm==1))
     {
-      sigma_i_s <- as(sigma_i_s,'dgCMatrix')
-      if(eigen==FALSE)
-      {
-        sigma_i_s = Matrix::forceSymmetric(sigma_i_s)
-      }
-      corr <- s_d <- NULL
+      corr <- as(corr,'dgCMatrix')
     }
   }
   
   if(verbose==TRUE)
-  {
-    if(inv==TRUE)
-    {message('The relatedness matrix is inverted.')}
-    
-    message("The method for computing the determinant is '", detap, "'.")
-    
-    if(type=='dense')
-    {
-      switch(
-        solver,
-        '1' = message('Solver: solve (base).'),
-        '2' = message('Solver: PCG (RcppEigen:dense).')
-      )
-    }else{
-      switch(
-        solver,
-        '1' = message('Solver: Cholesky decomposition (RcppEigen=',eigen,').'),
-        '2' = message('Solver: PCG (RcppEigen:sparse).')
-      )
-    }
-  }
+  { model_info(inv,ncm,eigen,type,solver,detap) }
   
   rad = NULL
-  if(detap=='slq')
+  if(detap%in%c('slq','gkb'))
   {
     rad = rbinom(n*mc,1,0.5)
     rad[rad==0] = -1
@@ -341,14 +293,24 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
   
   if(is.null(tau))
   {
-    tau_e = 0.5
-    new_t = switch(
-      opt,
-      'bobyqa' = bobyqa(tau_e, mll, type=type, beta=beta,u=u,si_d=si_d,sigma_i_s=sigma_i_s,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,sigma_s=corr,s_d=s_d,eps=eps,lower=min_tau,upper=max_tau,eigen=eigen,solver=solver,rad=rad),
-      'Brent' = optim(tau_e, mll, type=type, beta=beta,u=u,si_d=si_d,sigma_i_s=sigma_i_s,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,sigma_s=corr,s_d=s_d,eps=eps,lower=min_tau,upper=max_tau,method='Brent',eigen=eigen,solver=solver,rad=rad),
-      'NM' = optim(tau_e, mll, type=type, beta=beta,u=u,si_d=si_d,sigma_i_s=sigma_i_s,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,sigma_s=corr,s_d=s_d,eps=eps,method='Nelder-Mead',eigen=eigen,solver=solver,rad=rad),
-      stop("The argument opt should be bobyqa, Brent or NM.")
-    )
+    tau_e = rep(0.5,ncm)
+    if(ncm==1)
+    {
+      new_t = switch(
+        opt,
+        'bobyqa' = bobyqa(tau_e, mll, type=type, beta=beta,u=u,s_d=s_d,sigma_s=corr,sigma_i_s=sigma_i_s,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,eps=eps,lower=min_tau,upper=max_tau,solver=solver,rad=rad,slqd=slqd),
+        'Brent' = optim(tau_e, mll, type=type, beta=beta,u=u,s_d=s_d,sigma_s=corr,sigma_i_s=sigma_i_s,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,eps=eps,lower=min_tau,upper=max_tau,method='Brent',solver=solver,rad=rad,slqd=slqd),
+        'NM' = optim(tau_e, mll, type=type, beta=beta,u=u,s_d=s_d,sigma_s=corr,sigma_i_s=sigma_i_s,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,eps=eps,method='Nelder-Mead',solver=solver,rad=rad,slqd=slqd),
+        stop("The argument opt should be bobyqa, Brent or NM.")
+      )
+    }else{
+      new_t = switch(
+        opt,
+        'bobyqa' = bobyqa(tau_e, mll_mm, type=type, beta=beta,u=u,s_d=s_d,corr=corr,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,detap=detap,eps=eps,lower=rep(min_tau,ncm),upper=rep(max_tau,ncm),solver=solver,rad=rad,slqd=slqd),
+        'L-BFGS-B' = optim(tau_e, mll_mm, type=type, beta=beta,u=u,s_d=s_d,corr=corr,X=cov, d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,detap=detap,eps=eps,lower=rep(min_tau,ncm),upper=rep(max_tau,ncm),method='L-BFGS-B',solver=solver,rad=rad,slqd=slqd),
+        stop("The argument opt should be bobyqa or L-BFGS-B.")
+      )
+    }
     
     if(opt=='bobyqa')
     {iter <- new_t$iter}else{
@@ -356,13 +318,39 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
     }
     
     tau_e <- new_t$par
-    if(tau_e==min_tau)
-    {warning(paste0("The estimated variance component equals the lower bound (", min_tau, "), probably suggesting no random effects."))}
-    
+    check_tau(tau_e,min_tau,max_tau,ncm)
+    tau <- tau_e
   }else{
-    if(tau < 0)
+    if(min(tau) < 0)
     {stop("The variance component must be positive.")}
+    if(length(tau)!=ncm)
+    {stop("The number of tau must be consistent with the number of correlation matrices.")}
     tau_e = tau
+  }
+  
+  if(ncm>1)
+  {
+    for(i in 1:ncm)
+    {
+      corr[[i]] <- corr[[i]]*tau_e[i]
+    }
+    corr <- Reduce('+',corr)
+    
+    if(type=='dense')
+    {
+      sigma_i_s = chol(corr)
+      sigma_i_s = as.matrix(chol2inv(sigma_i_s))
+      s_d <- as.vector(diag(sigma_i_s))
+    }else{
+      corr <- as(corr,'dgCMatrix')
+      if(inv==TRUE)
+      {
+        corr <- Matrix::chol2inv(Matrix::chol(corr))
+        corr <- as(corr,'dgCMatrix')
+      }
+      s_d <- as.vector(Matrix::diag(corr))
+    }
+    tau_e <- 1
   }
   
   snpval = which(apply(X,2,sd)>0)
@@ -387,7 +375,7 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
       cme_re <- sapply(snpval, function(i)
       {
         tryCatch({
-        res <- irls_ex(beta, u, tau_e, si_d, sigma_i_s, as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,det=FALSE,detap=detap,solver=solver)
+        res <- irls_ex(beta, u, tau_e, s_d, corr, sigma_i_s,as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,det=FALSE,detap=detap,solver=solver)
         c(res$beta[1],res$v11[1,1])},
         warning = function(war){
           message(paste0('The estimation may not converge for predictor ',i))
@@ -400,14 +388,15 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
         )
       })
     }else{
+      
       if(is.null(order))
       {
         x_test = sample(c(rep(1,floor(nrow(X)/2)),rep(0,ceiling(nrow(X)/2))),replace = FALSE)
-        est_t = microbenchmark(irls_fast_ap(0, u, tau_e, si_d, sigma_i_s, as.matrix(x_test), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,1,det=FALSE,detap=detap,sigma_s=corr,s_d=s_d,eigen=eigen,solver=solver),times=2)
+        est_t = microbenchmark(irls_fast_ap(0, u, tau_e, s_d, corr, inv,as.matrix(x_test), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,1,det=FALSE,detap=detap,solver=solver),times=2)
         est_t = mean(est_t$time)
         for(ord_o in 2:10)
         {
-          est_c = microbenchmark(irls_fast_ap(0, u, tau_e, si_d, sigma_i_s, as.matrix(x_test), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,ord_o,det=FALSE,detap=detap,sigma_s=corr,s_d=s_d,eigen=eigen,solver=solver),times=2)
+          est_c = microbenchmark(irls_fast_ap(0, u, tau_e, s_d, corr, inv,as.matrix(x_test), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,ord_o,det=FALSE,detap=detap,solver=solver),times=2)
           est_c = mean(est_c$time)
           if(est_c<(0.9*est_t))
           {
@@ -424,7 +413,7 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
       cme_re <- sapply(snpval, function(i)
       {
         tryCatch({
-        res <- irls_fast_ap(beta, u, tau_e, si_d, sigma_i_s, as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,order_t,det=FALSE,detap=detap,sigma_s=corr,s_d=s_d,eigen=eigen,solver=solver)
+        res <- irls_fast_ap(beta, u, tau_e, s_d, corr, inv,as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,order_t,det=FALSE,detap=detap,solver=solver)
         c(res$beta[1],res$v11[1,1])
         },
         warning = function(war){
@@ -447,47 +436,48 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
     top = which(sumstats$p<threshold)
     if(length(top)>0)
     {
-      tau = tau_e
-      cme_re <- sapply(top, function(i)
+      if(ncm==1)
       {
-        if(opt=='bobyqa')
+        # tau = tau_e
+        cme_re <- sapply(top, function(i)
         {
-          new_t <- bobyqa(tau, mll, type=type, beta=beta,u=u,si_d=si_d,sigma_i_s=sigma_i_s,X=as.matrix(X[,c(i,c_ind)]), d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,sigma_s=corr,s_d=s_d,eps=eps,lower=min_tau,upper=max_tau,eigen=eigen,solver=solver,rad=rad)
-        }else{
-          if(opt=='Brent')
+          new_t = switch(
+            opt,
+            'bobyqa' = bobyqa(tau, mll, type=type, beta=beta,u=u,s_d=s_d,sigma_s=corr,sigma_i_s=sigma_i_s,X=as.matrix(X[,c(i,c_ind)]), d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,eps=eps,lower=min_tau,upper=max_tau,solver=solver,rad=rad),
+            'Brent' = optim(tau, mll, type=type, beta=beta,u=u,s_d=s_d,sigma_s=corr,sigma_i_s=sigma_i_s,X=as.matrix(X[,c(i,c_ind)]), d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,eps=eps,lower=min_tau,upper=max_tau,method='Brent',solver=solver,rad=rad),
+            'NM' = optim(tau, mll, type=type, beta=beta,u=u,s_d=s_d,sigma_s=corr,sigma_i_s=sigma_i_s,X=as.matrix(X[,c(i,c_ind)]), d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,eps=eps,method='Nelder-Mead',solver=solver,rad=rad)
+          )
+          tau_s <- new_t$par
+          if(type=='dense')
           {
-            new_t <- optim(tau, mll, type=type, beta=beta,u=u,si_d=si_d,sigma_i_s=sigma_i_s,X=as.matrix(X[,c(i,c_ind)]), d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,sigma_s=corr,s_d=s_d,eps=eps,lower=min_tau,upper=max_tau,method='Brent',eigen=eigen,solver=solver,rad=rad)
+            res <- irls_ex(beta, u, tau_s, s_d, corr, sigma_i_s,as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,det=FALSE,detap=detap,solver=solver)
           }else{
-            new_t <- optim(tau, mll, type=type, beta=beta,u=u,si_d=si_d,sigma_i_s=sigma_i_s,X=as.matrix(X[,c(i,c_ind)]), d_v=d_v, ind=ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,rk_cor=rk_cor,order=order_t,det=TRUE,detap=detap,inv=inv,sigma_s=corr,s_d=s_d,eps=eps,method='Nelder-Mead',eigen=eigen,solver=solver,rad=rad)
+            res <- irls_fast_ap(beta, u, tau_s, s_d, corr, inv,as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,order_t,det=FALSE,detap=detap,solver=solver)
           }
-        }
-        tau_s <- new_t$par
-        if(type=='dense')
-        {
-          res <- irls_ex(beta, u, tau_s, si_d, sigma_i_s, as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,det=FALSE,detap=detap,solver=solver)
-        }else{
-          res <- irls_fast_ap(beta, u, tau_s, si_d, sigma_i_s, as.matrix(X[,c(i,c_ind)]), eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,order_t,det=FALSE,detap=detap,sigma_s=corr,s_d=s_d,eigen=eigen,solver=solver)
-        }
-        c(tau_s,res$beta[1],res$v11[1,1])
-      })
-      sumstats$tau = sumstats$beta_exact = sumstats$sd_beta_exact = sumstats$p_exact = NA
-      sumstats$tau[top] = cme_re[1,]
-      sumstats$beta_exact[top] = cme_re[2,]
-      sumstats$sd_beta_exact[top] = sqrt(cme_re[3,])
-      sumstats$p_exact[top] <- pchisq(sumstats$beta_exact[top]^2/cme_re[3,],1,lower.tail=FALSE)
+          c(tau_s,res$beta[1],res$v11[1,1])
+        })
+        sumstats$tau = sumstats$beta_exact = sumstats$sd_beta_exact = sumstats$p_exact = NA
+        sumstats$tau[top] = cme_re[1,]
+        sumstats$beta_exact[top] = cme_re[2,]
+        sumstats$sd_beta_exact[top] = sqrt(cme_re[3,])
+        sumstats$p_exact[top] <- pchisq(sumstats$beta_exact[top]^2/cme_re[3,],1,lower.tail=FALSE)
+      }else{
+        if(verbose==TRUE)
+        {message('Variable-specific re-estimation of the variance components is not supported for multiple correlation matrices.')}
+      }
     }
   }else{
     beta <- rep(1e-16,k)
     u <- rep(0,n)
-    if(is.null(sigma_i_s))
-    {
-      sigma_i_s <- Matrix::solve(corr)
-    }
+    #if(is.null(sigma_i_s))
+    #{
+    #  sigma_i_s <- Matrix::solve(corr)
+    #}
     if(type=='dense')
     {
-      model_n <- irls_ex(beta, u, tau_e, si_d, sigma_i_s, cov, eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,det=FALSE,detap=detap,solver=solver)
+      model_n <- irls_ex(beta, u, tau_e, s_d, corr, sigma_i_s,cov, eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,det=FALSE,detap=detap,solver=solver)
     }else{
-      model_n <- irls_fast_ap(beta, u, tau_e, si_d, sigma_i_s, cov, eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,order_t,det=FALSE,detap=detap,sigma_s=corr,s_d=s_d,eigen=eigen,solver=solver)
+      model_n <- irls_fast_ap(beta, u, tau_e, s_d, corr, inv, cov, eps, d_v, ind, rs_rs=rs$rs_rs, rs_cs=rs$rs_cs,rs_cs_p=rs$rs_cs_p,order_t,det=FALSE,detap=detap,solver=solver)
     }
     u <- model_n$u
     if(k>0)
@@ -520,7 +510,16 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
       v[1:k,brc] = temp
       v[brc,1:k] = t(temp)
     }
-    v[brc,brc] = v[brc,brc] + as.matrix(sigma_i_s/tau_e)
+    # v[brc,brc] = v[brc,brc] + as.matrix(sigma_i_s/tau_e)
+    if(type=='dense')
+    {
+      v[brc,brc] = v[brc,brc] + as.matrix(sigma_i_s/tau_e)
+    }else{
+      if(inv==FALSE)
+      {corr <- Matrix::chol2inv(Matrix::chol(corr))}
+      v[brc,brc] = v[brc,brc] + as.matrix(corr/tau_e)
+    }
+    
     v = chol(v)
     v = chol2inv(v)
     t_st <- score_test(deriv,bw_v,w_v,rs$rs_rs-1,rs$rs_cs-1,rs$rs_cs_p-1,ind-1,a_v_p,a_v_2,tau_e,v,cov,as.matrix(X[,snpval]))
@@ -531,7 +530,7 @@ coxmeg_m <- function(X,outcome,corr,type,FID=NULL,cov=NULL,tau=NULL,min_tau=1e-0
     sumstats$score_test[snpval]=t_st[,2]
     sumstats$p[snpval]=pv
   }
-  res = list(summary=sumstats,tau=tau_e,rank=rk_cor,nsam=n)
+  res = list(summary=sumstats,tau=tau,rank=rk_cor,nsam=n)
   return(res)
 }
 

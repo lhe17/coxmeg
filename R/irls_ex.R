@@ -1,6 +1,6 @@
 
 
-irls_ex <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs_rs, rs_cs, rs_cs_p,det=FALSE,detap='slq',solver=1,rad=NULL)
+irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind, rs_rs, rs_cs, rs_cs_p,det=FALSE,detap='slq',solver=1,rad=NULL,slqd=8)
 {
   n <- length(u)
   n_c <- length(beta)
@@ -54,7 +54,13 @@ irls_ex <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs_rs, 
     a_v_2 <- as.vector(a_v_p*a_v_p)
     a_v_p <- a_v_p[a_v_p>0]
     
-    v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+    if(tau==1)
+    {
+      v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+    }else{
+      v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+    }
+    
     diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
     
     if(n_c>0)
@@ -133,7 +139,13 @@ irls_ex <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs_rs, 
       # hx = as.matrix(v[brc,brc]%*%X)
       hx = bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind-1,a_v_2)
       # v[brc,brc] = diag(bw_v) - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)+sigma_i_s
-      v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      if(tau==1)
+      {
+        v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      }else{
+        v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      }
+      
       diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
       vi11 = pcg_dense(v[brc,brc],hx,tol)
       vi11 <- solve(t(hx)%*%(X - vi11))
@@ -147,13 +159,31 @@ irls_ex <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs_rs, 
     
     if(detap=='slq')
     {
-      v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
-      diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
+      if(tau==1)
+      {
+        v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      }else{
+        v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      }
       
-      v[brc,brc] = v[brc,brc]*tau
-      logdet = logdet_lanczos(v[brc,brc], rad, 8) - n*log(tau)
+      diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
+      if(tau!=1)
+      {v[brc,brc] = v[brc,brc]*tau}
+      logdet = logdet_lanczos(v[brc,brc], rad, slqd) - n*log(tau)
+      
     }else{
-      logdet <- logdeth(as(sigma_i_s,'dgCMatrix'),si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,0)
+      if(detap=='gkb'){
+        a_v_2 <- as.vector(a_v[ind[,1]]*a_v[ind[,1]])
+        logdet = logdet_gkb(sigma_s, bw_v,tau,w_v,rs_rs,rs_cs,ind-1,a_v_2,rad, slqd)/2
+      }else{
+        if(detap %in% c('exact','diagonal'))
+        {
+          logdet <- logdeth(as(sigma_i_s,'dgCMatrix'),si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,0)
+        }else{
+          logdet <- logdethmcmdense(sigma_i_s,si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p)
+        }
+      }
+      
     }
     
   }

@@ -9,7 +9,6 @@ coxmeg(
   corr,
   type,
   X = NULL,
-  FID = NULL,
   eps = 1e-06,
   min_tau = 1e-04,
   max_tau = 5,
@@ -25,13 +24,11 @@ coxmeg(
 \arguments{
 \item{outcome}{A matrix contains time (first column) and status (second column). The status is a binary variable (1 for events / 0 for censored).}
 
-\item{corr}{A relatedness matrix. Can be a matrix or a 'dgCMatrix' class in the Matrix package. Must be symmetric positive definite or symmetric positive semidefinite.}
+\item{corr}{A relatedness matrix or a List object of matrices if there are multiple relatedness matrices. They can be a matrix or a 'dgCMatrix' class in the Matrix package. The matrix (or the sum if there are multiple) must be symmetric positive definite or symmetric positive semidefinite. The order of subjects must be consistent with that in outcome.}
 
 \item{type}{A string indicating the sparsity structure of the relatedness matrix. Should be 'bd' (block diagonal), 'sparse', or 'dense'. See details.}
 
 \item{X}{An optional matrix of the preidctors with fixed effects. Can be quantitative or binary values. Categorical variables need to be converted to dummy variables. Each row is a sample, and the predictors are columns.}
-
-\item{FID}{An optional string vector of family ID. If provided, the data will be reordered according to the family ID.}
 
 \item{eps}{An optional positive scalar indicating the relative convergence tolerance in the optimization algorithm. Default is 1e-6.}
 
@@ -41,17 +38,17 @@ coxmeg(
 
 \item{order}{An optional integer starting from 0. Only valid when \code{dense=FALSE}. It specifies the order of approximation used in the inexact newton method. Default is 1.}
 
-\item{detap}{An optional string indicating whether to use approximation for log-determinant. Can be 'exact', 'diagonal' or 'slq'. Default is NULL, which lets the function select a method based on 'type' and other information. See details.}
+\item{detap}{An optional string indicating whether to use an approximation for log-determinant. Can be 'exact', 'diagonal', 'gkb', or 'slq'. Default is NULL, which lets the function select a method based on 'type' and other information. See details.}
 
-\item{opt}{An optional logical scalar for the Optimization algorithm for tau. Can have the following values: 'bobyqa', 'Brent' or 'NM'. Default is 'bobyqa'.}
+\item{opt}{An optional logical scalar for the Optimization algorithm for estimating the variance component(s). Can be one of the following values: 'bobyqa', 'Brent', 'NM', or 'L-BFGS-B' (only for >1 variance components). Default is 'bobyqa'.}
 
-\item{solver}{An optional bianry value that can be either 1 (Cholesky Decomposition using RcppEigen), 2 (PCG) or 3 (Cholesky Decomposition using Matrix). Default is NULL, which lets the function select a solver. See details.}
+\item{solver}{An optional bianry value that can be either 1 (Cholesky Decomposition using RcppEigen) or 2 (PCG). Default is NULL, which lets the function select a solver. See details.}
 
 \item{spd}{An optional logical value indicating whether the relatedness matrix is symmetric positive definite. Default is TRUE. See details.}
 
 \item{verbose}{An optional logical scalar indicating whether to print additional messages. Default is TRUE.}
 
-\item{mc}{An optional integer scalar specifying the number of Monte Carlo samples used for approximating the log-determinant. Only valid when \code{dense=TRUE} and \code{detap='slq'}. Default is 100.}
+\item{mc}{An optional integer scalar specifying the number of Monte Carlo samples used for approximating the log-determinant when \code{detap='gkb'} or \code{detap='slq'}. Default is 100.}
 }
 \value{
 beta: The estimated coefficient for each predictor in X.
@@ -73,11 +70,16 @@ rank: The rank of the relatedness matrix.
 nsam: Actual sample size.
 }
 \description{
-\code{coxmeg} returns estimates of the variance component, the HRs and p-values for the predictors.
+\code{coxmeg} returns the estimates of the variance component(s) along with the HRs and p-values of the predictors.
 }
 \section{About \code{type}}{
 
-'bd' is used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. 'sparse' is used for a general sparse relatedness matrix the inverse of which is not sparse.
+Specifying the type of the relatedness matrix (whether it is block-diagonal, general sparse, or dense). In the case of multiple relatedness matrices, it refers to the type of the sum of these matrices.
+\itemize{ 
+\item{"bd"}{ - used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. }
+\item{"sparse"}{ - used for a general sparse relatedness matrix the inverse of which is not sparse.}
+\item{"dense"}{ - used for a dense relatedness matrix.}
+}
 }
 
 \section{About \code{spd}}{
@@ -87,12 +89,22 @@ When \code{spd=TRUE}, the relatedness matrix is treated as SPD. If the matrix is
 
 \section{About \code{solver}}{
 
-When \code{solver=1,3}/\code{solver=2}, Cholesky decompositon/PCG is used to solve the linear system. When \code{solver=3}, the solve function in the Matrix package is used, and when \code{solver=1}, it uses RcppEigen:LDLT to solve linear systems. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.
+Specifying which method is used to solve the linear system in the optimization algorithm.  
+\itemize{ 
+\item{"1"}{ - Cholesky decompositon (RcppEigen:LDLT) is used to solve the linear system.}
+\item{"2"}{ - PCG is used to solve the linear system. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.}
+}
 }
 
 \section{About \code{detap}}{
 
-When \code{detap='exact'}, the exact log-determinant is computed for estimating the variance component. Specifying \code{detap='diagonal'} uses diagonal approximation, and is only effective for a sparse relatedness matrix. Specifying \code{detap='slq'} uses stochastic lanczos quadrature approximation.
+Specifying the method to compute the log-determinant for estimating the variance component(s).
+\itemize{ 
+\item{"exact"}{ - the exact log-determinant is computed for estimating the variance component.}
+\item{"diagonal"}{ - uses diagonal approximation and is only effective for a sparse relatedness matrix.}
+\item{"slq"}{ - uses stochastic lanczos quadrature approximation. It uses the Lanczos algorithm to compute the weights and nodes. When type is 'bd' or 'sparse', it is often faster than 'gkb' and has the same accuracy. When type='dense', it is faster than 'gkb' by around half, but can be inaccurate if the relatedness matrix is (almost) singular.}
+\item{"gkb"}{ - uses stochastic lanczos quadrature approximation. It uses the Golub-Kahan bidiagonalization algorithm to compute the weights and nodes. It is robust against an (almost) singular relatedness matrix when type='dense', but it is generally slower than 'slq'.}  
+}
 }
 
 \examples{

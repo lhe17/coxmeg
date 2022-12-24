@@ -1,14 +1,15 @@
 
 
-irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs_rs, rs_cs, rs_cs_p, order=1,det=FALSE,detap='diagonal',sigma_s=NULL,s_d=NULL,eigen=TRUE,solver=1,rad=NULL)
+irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, rs_rs, rs_cs, rs_cs_p, order=1,det=FALSE,detap='diagonal',solver=1,rad=NULL,slqd=8)
 {
   n <- length(u)
   n_c <- length(beta)
   dim_v <- n_c + n
   n1_ind <- which(d_v>0)
-  inv <- TRUE
-  if(is.null(s_d)==FALSE)
-  {inv <- FALSE}
+  #inv <- TRUE
+  #if(is.null(s_d)==FALSE)
+  #{inv <- FALSE}
+  inv <- ifelse(inv==TRUE,1,0)
   ## rs_rs, rs_cs only for c++
   rs_rs = rs_rs - 1
   rs_cs = rs_cs - 1
@@ -27,25 +28,15 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
   s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
   loglik <- newloglik <- 0
   
-  if(inv==FALSE)
+  if(inv==0)
   {
     siu = as.vector(pcg_sparse(sigma_s,as.matrix(u_new),eps*1e-3)) 
   }else{
-    siu = as.vector(sigma_i_s%*%u_new)
+    siu = as.vector(sigma_s%*%u_new)
   }
   newloglik <- sum(eta_v[n1_ind]) - sum(log(s)[n1_ind]) - 0.5*t(u_new)%*%siu/tau
   lik_dif <- iter <- eps_s <- logdet <- 0
   maxiter = 200
-  
-  if(eigen==FALSE)
-  {
-    if(inv==TRUE)
-    {
-      sigma_i_s_bk <- as(sigma_i_s,'symmetricMatrix')
-    }else{
-      sigma_i_s_bk <- as(sigma_s,'symmetricMatrix')
-    }
-  }
   
   while(((lik_dif>eps_s)||(iter<1))&&(iter<maxiter))
   {
@@ -62,53 +53,9 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
     }
     der_t <- deriv_full[(n_c+1):dim_v]	
     
-    if(eigen==TRUE)
-    {
-      if(inv==TRUE)
-      {
-        re <- invsph(sigma_i_s, der_t, si_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, 1,tau,solver)
-      }else{
-        re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, 0,tau,solver)
-      }
-      wb_sig_i_hx_der <- re$wb_sig_i_hx_der
-      xh <- re$xh
-    }else{
-      a_v_2 <- (as.vector(a_v)*as.vector(a_v))[ind[,1]]
-      wb_sig_i_hx_der <- der_t
-      if(n_c>0){
-        xh <- t(bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind-1,a_v_2))
-        wb_sig_i_hx_der <- cbind(wb_sig_i_hx_der, t(xh))
-      }
-      if(inv==TRUE)
-      {
-        diag(sigma_i_s_bk) <- si_d + bw_v*tau
-        wb_sig_i_hx_der <- tau*Matrix::solve(sigma_i_s_bk,wb_sig_i_hx_der)
-      }else{
-        bw_i <- 1/bw_v
-        diag(sigma_i_s_bk) <- s_d + bw_i/tau
-        wb_sig_i_hx_der <- bw_i*Matrix::solve(sigma_i_s_bk,sigma_s%*%wb_sig_i_hx_der)
-      }
-      if(order>0)
-      {
-        wb_sig_i_hx_der_2 <- wb_sig_i_hx_der
-        if(inv==TRUE)
-        {
-          for(i in 1:order)
-          {
-            wb_sig_i_hx_der_2 <- csqei(w_v,as.matrix(wb_sig_i_hx_der_2),rs_rs,rs_cs,ind-1,a_v_2)
-            wb_sig_i_hx_der_2 <- tau*Matrix::solve(sigma_i_s_bk,wb_sig_i_hx_der_2)
-            wb_sig_i_hx_der <- wb_sig_i_hx_der+wb_sig_i_hx_der_2
-          }
-        }else{
-          for(i in 1:order)
-          {
-            wb_sig_i_hx_der_2 <- csqei(w_v,as.matrix(wb_sig_i_hx_der_2),rs_rs,rs_cs,ind-1,a_v_2)
-            wb_sig_i_hx_der_2 <- bw_i*Matrix::solve(sigma_i_s_bk,sigma_s%*%wb_sig_i_hx_der_2)
-            wb_sig_i_hx_der <- wb_sig_i_hx_der+wb_sig_i_hx_der_2
-          }
-        }
-      }
-    }
+    re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, inv,tau,solver)
+    wb_sig_i_hx_der <- re$wb_sig_i_hx_der
+    xh <- re$xh
     
     if(n_c>0)
     {
@@ -132,11 +79,11 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
     s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
     
     # siu <- as.vector(sigma_i_s%*%u_new)
-    if(inv==FALSE)
+    if(inv==0)
     {
       siu = as.vector(pcg_sparse(sigma_s,as.matrix(u_new),eps*1e-3)) 
     }else{
-      siu = as.vector(sigma_i_s%*%u_new)
+      siu = as.vector(sigma_s%*%u_new)
     }
     usiu <- Matrix::t(u_new)%*%siu
     newloglik <- sum(eta_v[n1_ind]) - sum(log(s)[n1_ind]) - 0.5*usiu/tau
@@ -164,11 +111,11 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
       
       w_v <- as.vector(exp(eta_v))
       s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
-      if(inv==FALSE)
+      if(inv==0)
       {
         siu = as.vector(pcg_sparse(sigma_s,as.matrix(u_new),eps*1e-3)) 
       }else{
-        siu = as.vector(sigma_i_s%*%u_new)
+        siu = as.vector(sigma_s%*%u_new)
       }
       usiu <- Matrix::t(u_new)%*%siu
       newloglik <- sum(eta_v[n1_ind]) - sum(log(s)[n1_ind]) - 0.5*usiu/tau
@@ -188,55 +135,8 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
       a_v <- d_v/s
       bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
       
-      if(eigen==TRUE)
-      {
-        if(inv==TRUE)
-        {
-          re <- invsph(sigma_i_s, der_t, si_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, 1,tau,solver)
-        }else{
-          re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, 0,tau,solver)
-        }
-        vi11 <- solve(re$xh%*%(X - re$wb_sig_i_hx_der[,(2:(n_c+1))]))
-      }else{
-        a_v_2 <- (as.vector(a_v)*as.vector(a_v))[ind[,1]]
-        
-        # w_v_x <- csqei(w_v,X,rs_rs-1,rs_cs-1,ind-1,a_v_2)
-        xh <- t(bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind-1,a_v_2))
-        wb_sig_i_hx_der <- t(xh)
-        
-        if(inv==TRUE)
-        {
-          diag(sigma_i_s_bk) <- si_d + bw_v*tau
-          wb_sig_i_hx_der <- tau*Matrix::solve(sigma_i_s_bk,wb_sig_i_hx_der)
-        }else{
-          bw_i <- 1/bw_v
-          diag(sigma_i_s_bk) <- s_d + bw_i/tau
-          wb_sig_i_hx_der <- bw_i*Matrix::solve(sigma_i_s_bk,sigma_s%*%wb_sig_i_hx_der)
-        }
-        if(order>0)
-        {
-          wb_sig_i_hx_der_2 <- wb_sig_i_hx_der
-          if(inv==TRUE)
-          {
-            for(i in 1:order)
-            {
-              wb_sig_i_hx_der_2 <- csqei(w_v,as.matrix(wb_sig_i_hx_der_2),rs_rs,rs_cs,ind-1,a_v_2)
-              wb_sig_i_hx_der_2 <- tau*Matrix::solve(sigma_i_s_bk,wb_sig_i_hx_der_2)
-              wb_sig_i_hx_der <- wb_sig_i_hx_der+wb_sig_i_hx_der_2
-            }
-          }else{
-            for(i in 1:order)
-            {
-              wb_sig_i_hx_der_2 <- csqei(w_v,as.matrix(wb_sig_i_hx_der_2),rs_rs,rs_cs,ind-1,a_v_2)
-              wb_sig_i_hx_der_2 <- bw_i*Matrix::solve(sigma_i_s_bk,sigma_s%*%wb_sig_i_hx_der_2)
-              wb_sig_i_hx_der <- wb_sig_i_hx_der+wb_sig_i_hx_der_2
-            }
-          }
-        }
-        
-        vi11 <- solve(xh%*%(X - wb_sig_i_hx_der))
-      }
-      
+      re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, inv,tau,solver)
+      vi11 <- solve(re$xh%*%(X - re$wb_sig_i_hx_der[,(2:(n_c+1))]))
     }
   }else{
     a_v <- d_v/s
@@ -248,52 +148,46 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
     
     if(detap=='diagonal')
     {
-      if(eigen==TRUE)
-      {
-        if(inv==TRUE)
+        if(inv==1)
         {
-          logdet <- logdeth(sigma_i_s,si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,1)
+          logdet <- logdeth(sigma_s,s_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,1)
           logdet <- logdet - n*log(tau)
         }else{
           logdet <- logdeth(sigma_s,s_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,0,1)
           # logdet <- logdet + si_der
         }
-      }else{
-        wv2 <- w_v*w_v
-        avp2 <- a_v_p*a_v_p
-        qd <- sapply(1:n, function(x) wv2[x]*sum(avp2[1:rs_cs_p[ind[x,2]]]))
-        if(inv==TRUE)
-        {
-          diag(sigma_i_s_bk) <- si_d + tau*(bw_v - qd)
-          logdet <- abs(Matrix::determinant(Matrix::Cholesky(sigma_i_s_bk))$modulus*2)
-          logdet <- logdet - n*log(tau)
-        }else{
-          dd <- bw_v - qd
-          diag(sigma_i_s_bk) <- s_d + 1/tau/dd
-          logdet <- abs(Matrix::determinant(Matrix::Cholesky(sigma_i_s_bk))$modulus*2) + sum(log(dd))
-        }
-      }
     }else{
-      if(detap=='exact')
+      # exact not available for sparse or ncm>1
+      if((detap=='exact') & (inv==1))
       {
-        logdet <- logdeth(as(sigma_i_s,'dgCMatrix'),si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,0)
+        logdet <- logdeth(as(sigma_s,'dgCMatrix'),s_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,0)
       }else{
         wv2 <- w_v*w_v
         avp2 <- a_v_p*a_v_p
         qd <- sapply(1:n, function(x) wv2[x]*sum(avp2[1:rs_cs_p[ind[x,2]]]))
         
-        if(inv==TRUE)
+        if(inv==1)
         {
-          v = sigma_i_s/tau
+          if(tau==1)
+          {
+            v = sigma_s
+          }else{
+            v = sigma_s/tau
+          }
           diag(v) = diag(v) + bw_v - qd
           v = v*tau
-          logdet = logdet_lanczos_sp(as(v,'dgCMatrix'), rad, 8) - n*log(tau)
+          logdet = logdet_lanczos_sp(as(v,'dgCMatrix'), rad, slqd) - n*log(tau)
         }else{
           dd <- bw_v - qd
           v = sigma_s%*%Diagonal(n,dd)
           diag(v) = diag(v) + 1/tau
-          v = v%*%t(v)
-          logdet = logdet_lanczos_sp(as(v,'dgCMatrix'), rad, 8)/2
+          if(detap=='slq')
+          { 
+            v = v%*%t(v)
+            logdet = logdet_lanczos_sp(as(v,'dgCMatrix'), rad, slqd)/2
+          }else{
+            logdet = logdet_gkb_sp(as(v,'dgCMatrix'), rad, slqd)/2
+          }
         }
       }
         
@@ -303,3 +197,4 @@ irls_fast_ap <- function(beta, u, tau,si_d, sigma_i_s, X, eps=1e-6, d_v, ind, rs
   
   return(list(beta=beta_new,u=u_new,v11=vi11,iter=iter,ll=newloglik,logdet=logdet))
 }
+

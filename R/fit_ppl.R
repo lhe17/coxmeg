@@ -4,19 +4,29 @@
 #' \code{fit_ppl} returns estimates of HRs and their p-values given a known variance component (tau).
 #' 
 #' @section About \code{type}:
-#' 'bd' is used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. 'sparse' is used for a general sparse relatedness matrix the inverse of which is not sparse. 
+#' Specifying the type of the relatedness matrix (whether it is block-diagonal, general sparse, or dense). In the case of multiple relatedness matrices, it refers to the type of the sum of these matrices.
+#' \itemize{ 
+#' \item{"bd"}{ - used for a block-diagonal relatedness matrix, or a sparse matrix the inverse of which is also sparse. }
+#' \item{"sparse"}{ - used for a general sparse relatedness matrix the inverse of which is not sparse.}
+#' \item{"dense"}{ - used for a dense relatedness matrix.}
+#' }
+#' @section About \code{spd}:
+#' When \code{spd=TRUE}, the relatedness matrix is treated as SPD. If the matrix is SPSD or not sure, use \code{spd=FALSE}.
 #' @section About \code{solver}:
-#' When \code{solver=1,3}/\code{solver=2}, Cholesky decompositon/PCG is used to solve the linear system. When \code{solver=3}, the solve function in the Matrix package is used, and when \code{solver=1}, it uses RcppEigen:LDLT to solve linear systems. 
+#' Specifying which method is used to solve the linear system in the optimization algorithm.  
+#' \itemize{ 
+#' \item{"1"}{ - Cholesky decompositon (RcppEigen:LDLT) is used to solve the linear system.}
+#' \item{"2"}{ - PCG is used to solve the linear system. When \code{type='dense'}, it is recommended to set \code{solver=2} to have better computational performance.}
+#' }
 #' 
-#' @param tau A positive scalar. A variance component given by the user. Default is 0.5.
-#' @param X A matrix of the preidctors. Can be quantitative or binary values. Categorical variables need to be converted to dummy variables. Each row is a sample, and the predictors are columns.
+#' @param tau A positive scalar or vector. A variance component(s) given by the user. If there are more than one related matrix, this must be a vector, the length of which corresponds to the number of matrices. 
+#' @param X A matrix of the predictors. Can be quantitative or binary values. Categorical variables need to be converted to dummy variables. Each row is a sample, and the predictors are columns.
 #' @param outcome A matrix contains time (first column) and status (second column). The status is a binary variable (1 for failure / 0 for censored).
-#' @param corr A relatedness matrix. Can be a matrix or a 'dgCMatrix' class in the Matrix package. Must be symmetric positive definite or symmetric positive semidefinite.
+#' @param corr A relatedness matrix or a List object of matrices if there are multiple relatedness matrices. They can be a matrix or a 'dgCMatrix' class in the Matrix package. The matrix (or the sum if there are multiple) must be symmetric positive definite or symmetric positive semidefinite. The order of subjects must be consistent with that in outcome.
 #' @param type A string indicating the sparsity structure of the relatedness matrix. Should be 'bd' (block diagonal), 'sparse', or 'dense'. See details.
-#' @param FID An optional string vector of family ID. If provided, the data will be reordered according to the family ID.
 #' @param eps An optional positive value indicating the relative convergence tolerance in the optimization algorithm. Default is 1e-6.
 #' @param spd An optional logical value indicating whether the relatedness matrix is symmetric positive definite. Default is TRUE. 
-#' @param solver An optional bianry value that can be either 1 (Cholesky Decomposition using RcppEigen), 2 (PCG) or 3 (Cholesky Decomposition using Matrix). Default is NULL, which lets the function select a solver. See details.
+#' @param solver An optional binary value that can be either 1 (Cholesky Decomposition using RcppEigen) or 2 (PCG). Default is NULL, which lets the function select a solver. See details.
 #' @param verbose An optional logical value indicating whether to print additional messages. Default is TRUE.
 #' @param order An optional integer value starting from 0. Only valid when dense=FALSE. It specifies the order of approximation used in the inexact newton method. Default is 1.
 #' @return beta: The estimated coefficient for each predictor in X.
@@ -58,7 +68,7 @@
 #' re = fit_ppl(x,outcome,sigma,type='bd',tau=0.5,order=1)
 #' re
 
-fit_ppl <- function(X,outcome,corr,type,tau=0.5,FID=NULL,eps=1e-6,order=1,solver=NULL,spd=TRUE,verbose=TRUE){
+fit_ppl <- function(X,outcome,corr,type,tau,eps=1e-6,order=1,solver=NULL,spd=TRUE,verbose=TRUE){
 
   if(eps<0)
   {eps <- 1e-6}
@@ -66,21 +76,33 @@ fit_ppl <- function(X,outcome,corr,type,tau=0.5,FID=NULL,eps=1e-6,order=1,solver
   if(!(type %in% c('bd','sparse','dense')))
   {stop("The type argument should be 'bd', 'sparse' or 'dense'.")}
   
+  ncm <- 1
+  if(is.list(corr))
+  {
+    ncm <- length(corr)
+    ntau <- length(tau)
+    if(ncm != ntau)
+    {stop("The length of tau must be the same as the number of matrices in corr.")}
+    if(ncm==1)
+    {
+      corr <- corr[[1]]
+    }else{
+      for(i in 1:ncm)
+      {
+        corr[[i]] <- corr[[i]]*tau[i]
+      }
+      corr <- Reduce('+',corr)
+      tau <- 1
+    }
+  }
+  if((spd==FALSE) & (ncm>1))
+  {stop("The option spd=FALSE does not support more than one correlation matrix. If multiple correlation matrices are provided, please make sure that their sum is SPD.")}
+  
   X <- as.matrix(X)
   outcome <- as.matrix(outcome)
   
   if(nrow(outcome)!=nrow(X))
   {stop("The phenotype and predictor matrices have different sample sizes.")}
-  
-  ## family structure
-  if(is.null(FID)==FALSE)
-  {
-    ord <- order(FID)
-    FID <- as.character(FID[ord])
-    X <- as.matrix(X[ord,,drop = FALSE])
-    outcome <- as.matrix(outcome[ord,,drop = FALSE])
-    corr <- corr[ord,ord,drop = FALSE]
-  }
   
   min_d <- min(outcome[which(outcome[,2]==1),1])
   rem <- which((outcome[,2]==0)&(outcome[,1]<min_d))
@@ -120,24 +142,15 @@ fit_ppl <- function(X,outcome,corr,type,tau=0.5,FID=NULL,eps=1e-6,order=1,solver
   ind <- order(outcome[,1])
   ind <- as.matrix(cbind(ind,order(ind)))
   rk <- rank(outcome[ind[,1],1],ties.method='min')
-  n1 <- sum(d_v>0)
-  
+  # n1 <- sum(d_v>0)
   rs <- rs_sum(rk-1,d_v[ind[,1]])
+  
+  spsd = FALSE
   if(spd==FALSE)
-  {
-    rk_cor = matrix.rank(as.matrix(corr),method='chol')
-    spsd = FALSE
-    if(rk_cor<n)
-    {spsd = TRUE}
-    if(verbose==TRUE)
-    {message(paste0('The sample size included is ',n,'. The rank of the relatedness matrix is ', rk_cor))}
-    
-  }else{
-    spsd = FALSE
-    rk_cor = n
-    if(verbose==TRUE)
-    {message(paste0('The sample size included is ',n,'.'))}
-  }
+  {spsd = TRUE}
+  rk_cor = n
+  if(verbose==TRUE)
+  {message(paste0('There is/are ',k,' covariates. The sample size included is ',n,'.'))}
   
   nz <- nnzero(corr)
   if( nz > ((as.double(n)^2)/2) )
@@ -145,126 +158,77 @@ fit_ppl <- function(X,outcome,corr,type,tau=0.5,FID=NULL,eps=1e-6,order=1,solver
   inv = NULL
   
   eigen = TRUE
+  sigma_i_s <- NULL
   if(type=='dense')
   {
-    if(verbose==TRUE)
-    {message('The relatedness matrix is treated as dense.')}
-    corr = as.matrix(corr)
+    corr <- as.matrix(corr)
     if(spsd==FALSE)
     {
-      corr = chol(corr)
-      corr = as.matrix(chol2inv(corr))
-    }else{
-      ei = eigen(corr)
-      ei$values[ei$values<1e-10] = 1e-6
-      corr = ei$vectors%*%diag(1/ei$values)%*%t(ei$vectors)
-      # corr <- ginv(corr)
-      rk_cor = n
-      spsd = FALSE
-    }
-    inv <- TRUE
-    sigma_i_s = corr
-    corr <- s_d <- NULL
-    si_d <- as.vector(diag(sigma_i_s))
-    
-    if(is.null(solver))
-    {solver = 2}else{
-      if(solver==3)
-      {solver = 1}
-    }
-    
-  }else{
-    
-    if(verbose==TRUE)
-    {message('The relatedness matrix is treated as sparse.')}
-    
-    corr <- as(corr, 'dgCMatrix')
-    si_d = s_d = NULL
-    
-    if(spsd==FALSE)
-    {
-      if(type=='bd')
-      {
-        sigma_i_s <- Matrix::chol2inv(Matrix::chol(corr))
-        inv = TRUE
-        si_d <- as.vector(Matrix::diag(sigma_i_s))
-      }else{
-        sigma_i_s = NULL
-        inv = FALSE
-        s_d <- as.vector(Matrix::diag(corr))
-        
-      }
+      sigma_i_s = chol(corr)
+      sigma_i_s = as.matrix(chol2inv(sigma_i_s))
     }else{
       sigma_i_s = eigen(corr)
       if(min(sigma_i_s$values) < -1e-10)
       {
-        stop("The relatedness matrix has negative eigenvalues.")
+        warning("The relatedness matrix has negative eigenvalues. Please use a positive (semi)definite matrix.")
       }
-      # sigma_i_s = sigma_i_s$vectors%*%(c(1/sigma_i_s$values[1:rk_cor],rep(0,n-rk_cor))*t(sigma_i_s$vectors))
-      sigma_i_s$values[sigma_i_s$values<1e-10] = 1e-6
+      npev <- which(sigma_i_s$values<1e-10)
+      if(length(npev)>0)
+      {
+        sigma_i_s$values[npev] = 1e-6
+      }
       sigma_i_s = sigma_i_s$vectors%*%diag(1/sigma_i_s$values)%*%t(sigma_i_s$vectors)
-      rk_cor = n
-      spsd = FALSE
       
-      inv = TRUE
-      si_d <- as.vector(Matrix::diag(sigma_i_s))
+    }
+    inv <- TRUE
+    s_d <- as.vector(diag(sigma_i_s))
+    
+    solver <- get_solver(solver,type,verbose)
+    
+  }else{
+    
+    corr <- as(corr, 'dgCMatrix')
+    si_d = s_d = NULL
+    
+    if(spsd==TRUE)
+    {
+      minei <- rARPACK::eigs_sym(corr, 1, which = "SA")$values
+      if(minei < -1e-10)
+      {
+        stop("The relatedness matrix has negative eigenvalues. Please use a positive (semi)definite matrix.")
+      }
+      if(minei<1e-10)
+      {Matrix::diag(corr) <- Matrix::diag(corr) + 1e-6}
+      rk_cor = n
     }
     
-    if(is.null(solver))
+    if(type=='bd')
     {
-      if(type=='bd')
-      {
-        solver = 1
-        if(n>5e4)
-        {
-          eigen = FALSE
-        }
-      }else{solver = 2}
+      corr <- Matrix::chol2inv(Matrix::chol(corr))
+      inv = TRUE
     }else{
-      if(solver==3)
-      {
-        eigen = FALSE
-        solver = 1
-      }
+      inv = FALSE
     }
+    s_d <- as.vector(Matrix::diag(corr))
+    
+    solver <- get_solver(solver,type,verbose)
     
     if(inv==TRUE)
     {
-      sigma_i_s <- as(sigma_i_s,'dgCMatrix')
-      if(eigen==FALSE)
-      {
-        sigma_i_s = Matrix::forceSymmetric(sigma_i_s)
-      }
-      corr <- s_d <- NULL
+      corr <- as(corr,'dgCMatrix')
     }
   }
   
   if(verbose==TRUE)
   {
-    if(inv==TRUE)
-    {message('The relatedness matrix is inverted.')}
-    
-    if(type=='dense')
-    {
-      switch(
-        solver,
-        '1' = message('Solver: solve (base).'),
-        '2' = message('Solver: PCG (RcppEigen:dense).')
-      )
-    }else{
-      switch(
-        solver,
-        '1' = message('Solver: Cholesky decomposition (RcppEigen=',eigen,').'),
-        '2' = message('Solver: PCG (RcppEigen:sparse).')
-      )
-    }
+    model_info(inv,ncm,eigen,type,solver)
   }
   
   if(type=='dense')
   {
-    res <- irls_ex(beta, u, tau, si_d, sigma_i_s, X, eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,det=FALSE,detap='exact',solver=solver)
+    res <- irls_ex(beta, u, tau, s_d, corr, sigma_i_s, X, eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,det=FALSE,detap='exact',solver=solver)
   }else{
-    res <- irls_fast_ap(beta, u, tau, si_d, sigma_i_s, X, eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,order,det=FALSE,detap='exact',sigma_s=corr,s_d=s_d,eigen=eigen,solver=solver)
+    res <- irls_fast_ap(beta, u, tau, s_d, corr, inv, X, eps, d_v, ind, rs$rs_rs, rs$rs_cs,rs$rs_cs_p,order,det=FALSE,detap='exact',solver=solver)
   }
   
   res_beta = as.vector(res$beta)
