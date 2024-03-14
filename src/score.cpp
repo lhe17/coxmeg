@@ -17,8 +17,8 @@ typedef Eigen::MappedSparseMatrix<double> MSpMat;
 // available from R
 
 // [[Rcpp::export]]
-Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::MatrixXd & mx, const Eigen::Map<Eigen::VectorXd> & rs_rs, 
-                      const Eigen::Map<Eigen::VectorXd> & rs_cs,const Eigen::MatrixXi & ind, const Eigen::Map<Eigen::VectorXd> & av) {
+Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::MatrixXd & mx, const Eigen::Map<Eigen::VectorXi> & rs_rs, 
+                      const Eigen::Map<Eigen::VectorXi> & rs_cs,const Eigen::Map<Eigen::MatrixXi> & ind, const Eigen::Map<Eigen::VectorXd> & av) {
   // multiplication of the Lap matrix (dense part) and mx
   int nr = mx.rows();
   int nc = mx.cols();
@@ -48,7 +48,7 @@ Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::Matr
 
 
 // [[Rcpp::export]]
-Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd> & w, const Eigen::Map<Eigen::VectorXd> & cs_p, const Eigen::MatrixXi & ind,
+Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd> & w, const Eigen::Map<Eigen::VectorXi> & cs_p, const Eigen::MatrixXi & ind,
                        const Eigen::Map<Eigen::VectorXd> & a) {
   // the Lap matrix (dense part) 
   int n = w.size();
@@ -86,8 +86,8 @@ Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd> & w, const Eigen::Map<E
 //
 // [[Rcpp::export]]
 Eigen::MatrixXd score_test(const Eigen::Map<Eigen::VectorXd> & deriv, const Eigen::Map<Eigen::VectorXd> & bw_v,
-               const Eigen::Map<Eigen::VectorXd> &  w, const Eigen::Map<Eigen::VectorXd> & rs_rs,const Eigen::Map<Eigen::VectorXd> & rs_cs,
-               const Eigen::Map<Eigen::VectorXd> & cs_p, const Eigen::MatrixXi & ind,
+               const Eigen::Map<Eigen::VectorXd> &  w, const Eigen::Map<Eigen::VectorXi> & rs_rs,const Eigen::Map<Eigen::VectorXi> & rs_cs,
+               const Eigen::Map<Eigen::VectorXi> & cs_p, const Eigen::Map<Eigen::MatrixXi> & ind,
                const Eigen::Map<Eigen::VectorXd> & a, const Eigen::Map<Eigen::VectorXd> & a2, const Eigen::VectorXd & tau, 
                const Eigen::Map<Eigen::MatrixXd> & v,const Eigen::MatrixXd & cov, const Eigen::MatrixXd & x) {
 

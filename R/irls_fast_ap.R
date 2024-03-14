@@ -11,8 +11,10 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
   #{inv <- FALSE}
   inv <- ifelse(inv==TRUE,1,0)
   ## rs_rs, rs_cs only for c++
-  rs_rs = rs_rs - 1
-  rs_cs = rs_cs - 1
+  rs_rs = as.integer(rs_rs - 1)
+  rs_cs = as.integer(rs_cs - 1)
+  ind_1 = ind - 1
+  mode(ind_1) = 'integer'
   
   u_new <- u
   beta_new <- vi11 <- NULL
@@ -25,7 +27,7 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
   }
   w_v <- as.vector(exp(eta_v))
   ## (-1) for cpp
-  s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
+  s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
   loglik <- newloglik <- 0
   
   if(inv==0)
@@ -43,7 +45,7 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
     damp = 1
     loglik <- newloglik
     a_v <- d_v/s
-    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
+    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind_1,0))
     deriv <- d_v - bw_v
     if(n_c>0)
     {
@@ -53,7 +55,7 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
     }
     der_t <- deriv_full[(n_c+1):dim_v]	
     
-    re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, inv,tau,solver)
+    re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind_1,a_v[ind[,1]], bw_v, order, inv,tau,solver)
     wb_sig_i_hx_der <- re$wb_sig_i_hx_der
     xh <- re$xh
     
@@ -76,7 +78,7 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
     }
     
     w_v <- as.vector(exp(eta_v))
-    s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
+    s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
     
     # siu <- as.vector(sigma_i_s%*%u_new)
     if(inv==0)
@@ -110,7 +112,7 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
       }
       
       w_v <- as.vector(exp(eta_v))
-      s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
+      s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
       if(inv==0)
       {
         siu = as.vector(pcg_sparse(sigma_s,as.matrix(u_new),eps*1e-3)) 
@@ -133,34 +135,36 @@ irls_fast_ap <- function(beta, u, tau,s_d, sigma_s, inv,X, eps=1e-6, d_v, ind, r
     if(n_c>0)
     {
       a_v <- d_v/s
-      bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
+      bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind_1,0))
       
-      re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind-1,a_v[ind[,1]], bw_v, order, inv,tau,solver)
+      re <- invsph(sigma_s, der_t, s_d,w_v,X,rs_rs,rs_cs,ind_1,a_v[ind[,1]], bw_v, order, inv,tau,solver)
       vi11 <- solve(re$xh%*%(X - re$wb_sig_i_hx_der[,(2:(n_c+1))]))
     }
   }else{
     a_v <- d_v/s
     # b_v <- as.vector(cswei(a_v,rs_cs-1,ind-1,0))
-    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
+    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind_1,0))
     
     a_v_p <- a_v[ind[,1]]
     a_v_p <- a_v_p[a_v_p>0]
     
     if(detap=='diagonal')
     {
-        if(inv==1)
+      rs_cs_p_1 = as.integer(rs_cs_p-1)
+      if(inv==1)
         {
-          logdet <- logdeth(sigma_s,s_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,1)
+          logdet <- logdeth(sigma_s,s_d,bw_v, w_v,rs_cs_p_1,ind_1,a_v_p,tau,1,1)
           logdet <- logdet - n*log(tau)
         }else{
-          logdet <- logdeth(sigma_s,s_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,0,1)
+          logdet <- logdeth(sigma_s,s_d,bw_v, w_v,rs_cs_p_1,ind_1,a_v_p,tau,0,1)
           # logdet <- logdet + si_der
         }
     }else{
       # exact not available for sparse or ncm>1
       if((detap=='exact') & (inv==1))
       {
-        logdet <- logdeth(as(sigma_s,'dgCMatrix'),s_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,0)
+        rs_cs_p_1 = as.integer(rs_cs_p-1)
+        logdet <- logdeth(as(sigma_s,'dgCMatrix'),s_d,bw_v, w_v,rs_cs_p_1,ind_1,a_v_p,tau,1,0)
       }else{
         wv2 <- w_v*w_v
         avp2 <- a_v_p*a_v_p

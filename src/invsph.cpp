@@ -20,8 +20,8 @@ typedef Eigen::SimplicialLDLT<SpMat> SpChol;
 //
 // [[Rcpp::export]]
 Rcpp::List invsph(Eigen::SparseMatrix<double> & A, const Eigen::Map<Eigen::VectorXd> & der, const Eigen::Map<Eigen::VectorXd> & dv,
-                  const Eigen::Map<Eigen::VectorXd> & v1, const Eigen::Map<Eigen::MatrixXd> & mx, const Eigen::Map<Eigen::VectorXd> & v2, 
-                  const Eigen::Map<Eigen::VectorXd> & v3,const Eigen::Map<Eigen::MatrixXd> & v4,
+                  const Eigen::Map<Eigen::VectorXd> & v1, const Eigen::Map<Eigen::MatrixXd> & mx, const Eigen::Map<Eigen::VectorXi> & v2, 
+                  const Eigen::Map<Eigen::VectorXi> & v3,const Eigen::Map<Eigen::MatrixXi> & v4,
                   const Eigen::Map<Eigen::VectorXd> & av, const Eigen::Map<Eigen::VectorXd> & bw, 
                   const Eigen::VectorXd & f,const Eigen::VectorXd & inv,const Eigen::VectorXd & tau,
                   const int sol) {

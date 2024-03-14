@@ -92,9 +92,9 @@ seq <- seqOpen(seqfile)
 As an alternate method of creating a random effects matrix, we use the KING algorithm to estimate pairwise relatedness, and use the GENESIS package to transform the results into a sparse block-diagonal matrix. The threshold chosen corresponds to setting values for pairs less closely related than second-degree relatives to 0. We multiply the matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is the kinship coefficient for identical genomes).
 
 ```{r}
-library(GENESIS)
 if(requireNamespace('GENESIS', quietly = TRUE))
 {
+  library(GENESIS)
   king <- snpgdsIBDKING(seq, verbose=FALSE)
   sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
   sigma[1:5,1:5]
@@ -120,9 +120,12 @@ head(pheno)
 The SeqArray package allows for pre-selecting variants using the `seqSetFilter` function. We set `type='bd'` since `sigma` is a block diagonal matrix.
 
 ```{r}
-seqSetFilter(seq, variant.sel=1:100)
-re <- coxmeg_gds(seq, pheno, sigma, type='bd')
-head(re$summary)
+if(requireNamespace('GENESIS', quietly = TRUE))
+{
+  seqSetFilter(seq, variant.sel=1:100)
+  re <- coxmeg_gds(seq, pheno, sigma, type='bd')
+  head(re$summary)
+}
 ```
 
 ```{r}

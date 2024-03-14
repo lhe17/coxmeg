@@ -1,4 +1,4 @@
--   [coxmeg 1.1.1](#coxmeg-1.1.1)
+-   [coxmeg v1.1.5](#coxmeg-v1.1.5)
     -   [Overview](#overview)
     -   [Installation](#installation)
         -   [Most recent version](#most-recent-version)
@@ -17,7 +17,7 @@
         matrices](#use-multiple-relatedness-matrices)
     -   [References](#references)
 
-# coxmeg 1.1.1
+# coxmeg v1.1.5
 
 ## Overview
 
@@ -72,7 +72,9 @@ which has five members. We use ‘dgCMatrix’ to save memory.
     }
     sigma = as(bdiag(mat_list),'dgCMatrix')
 
-    ## as(<dsCMatrix>, "dgCMatrix") is deprecated since Matrix 1.5-0; do as(., "generalMatrix") instead
+    ## 'as(<dsCMatrix>, "dgCMatrix")' is deprecated.
+    ## Use 'as(., "generalMatrix")' instead.
+    ## See help("Deprecated") and help("Matrix-deprecated").
 
     sigma[1:5,1:5]
 
@@ -101,12 +103,12 @@ the effect of log(HR)=0.1.
     head(outcome)
 
     ##           ycen  
-    ## [1,] 3.5239617 1
-    ## [2,] 3.8438360 1
-    ## [3,] 1.8414729 1
-    ## [4,] 1.4015318 1
-    ## [5,] 3.3304404 1
-    ## [6,] 0.5493372 1
+    ## [1,] 0.9419918 1
+    ## [2,] 2.9645595 1
+    ## [3,] 0.9127757 1
+    ## [4,] 1.8768276 1
+    ## [5,] 1.5537022 1
+    ## [6,] 3.8630265 1
 
 We fit a Cox mixed-effects model using the function `coxmeg`.
 
@@ -142,22 +144,22 @@ error indicating sigularity.
     re
 
     ## $beta
-    ## [1] 0.1283217
+    ## [1] 0.1520123
     ## 
     ## $HR
-    ## [1] 1.136919
+    ## [1] 1.164175
     ## 
     ## $sd_beta
-    ## [1] 0.03671108
+    ## [1] 0.03629015
     ## 
     ## $p
-    ## [1] 0.0004732641
+    ## [1] 2.804302e-05
     ## 
     ## $tau
-    ## [1] 0.126218
+    ## [1] 0.1970383
     ## 
     ## $iter
-    ## [1] 18
+    ## [1] 21
     ## 
     ## $rank
     ## [1] 1000
@@ -166,7 +168,7 @@ error indicating sigularity.
     ## [1] 1000
     ## 
     ## $int_ll
-    ## [1] 11413.68
+    ## [1] 11469.22
 
 In the above result, `tau` is the estimated variance component, and
 `int_ll` is -2\*log(lik) of the integrated/marginal likelihood for
@@ -183,11 +185,11 @@ will automatically select a method for computing the determinant based
 on `type`, the sample size, and whether the relatedness matrix is
 symmetric positive definite (SPD).
 
-We compare the results with coxme, which are slightly different due to
-different approximation of the log-determinant used in the estimation of
-the variance component. Also, the integrated log-likelihoods cannot be
-compared directly because different approximation of log-determinant is
-used.
+Compared to the result from `coxme`, we see that the results are highly
+consistent. The slight difference is due to different approximation of
+the log-determinant used in the estimation of the variance component.
+Also, the integrated log-likelihoods cannot be compared directly because
+different approximation of log-determinant is used.
 
     library(coxme)
 
@@ -211,23 +213,23 @@ used.
 
     ## Cox mixed-effects model fit by maximum likelihood
     ## 
-    ##   events, n = 935, 1000
-    ##   Iterations= 7 33 
-    ##                     NULL Integrated    Fitted
-    ## Log-likelihood -5547.767   -5539.37 -5441.375
+    ##   events, n = 942, 1000
+    ##   Iterations= 21 90 
+    ##                     NULL Integrated   Fitted
+    ## Log-likelihood -5581.507  -5567.103 -5425.13
     ## 
     ##                    Chisq    df          p   AIC     BIC
-    ## Integrated loglik  16.79  2.00 2.2546e-04 12.79    3.11
-    ##  Penalized loglik 212.79 92.66 1.9309e-11 27.46 -421.09
+    ## Integrated loglik  28.81   2.0 5.5464e-07 24.81   15.11
+    ##  Penalized loglik 312.75 130.5 0.0000e+00 51.76 -580.88
     ## 
     ## Model:  Surv(outcome[, 1], outcome[, 2]) ~ as.matrix(pred) + (1 | as.character(1:n)) 
     ## Fixed coefficients
-    ##                      coef exp(coef) se(coef)   z       p
-    ## as.matrix(pred) 0.1284929  1.137113 0.036754 3.5 0.00047
+    ##                     coef exp(coef)   se(coef)    z       p
+    ## as.matrix(pred) 0.152186  1.164377 0.03633758 4.19 2.8e-05
     ## 
     ## Random effects
     ##  Group             Variable Std Dev   Variance 
-    ##  as.character.1.n. Vmat.1   0.3579833 0.1281521
+    ##  as.character.1.n. Vmat.1   0.4461202 0.1990233
 
 In GWAS, we may split the procedure into two separate steps, (1)
 estimate the variance component under the null model, and (2) estimate
@@ -251,7 +253,7 @@ component. This can be carried out in the following way.
     tau = re$tau
     print(tau)
 
-    ## [1] 0.1163141
+    ## [1] 0.1856128
 
     re2 = fit_ppl(pred,outcome,sigma,type='bd',tau=tau,order=1)
 
@@ -268,23 +270,23 @@ component. This can be carried out in the following way.
     re2
 
     ## $beta
-    ## [1] 0.1274538
+    ## [1] 0.1510261
     ## 
     ## $HR
-    ## [1] 1.135932
+    ## [1] 1.163027
     ## 
     ## $sd_beta
-    ## [1] 0.03651369
+    ## [1] 0.0360913
     ## 
     ## $p
-    ## [1] 0.0004819834
+    ## [1] 2.857222e-05
     ## 
     ## $iter
-    ## [1] 3
+    ## [1] 4
     ## 
     ## $ppl
-    ##           [,1]
-    ## [1,] -5491.839
+    ##       [,1]
+    ## [1,] -5495
 
 ## Perform GWAS of an age-at-onset phenotype with a sparse relatedness matrix
 
@@ -413,17 +415,17 @@ between 1 and 10 for analyzing the SNPs when `order` is not specified.
     re
 
     ## $summary
-    ##            beta        HR    sd_beta          p
-    ## 1  -0.056199209 0.9453508 0.02984523 0.05969748
-    ## 2   0.051069317 1.0523958 0.02950735 0.08349954
-    ## 3   0.037964053 1.0386939 0.02946533 0.19759584
-    ## 4  -0.065725704 0.9363877 0.02892175 0.02305418
-    ## 5   0.001552012 1.0015532 0.02919939 0.95761064
-    ## 6   0.001791872 1.0017935 0.02927764 0.95119774
-    ## 7  -0.034176168 0.9664012 0.03009807 0.25616860
-    ## 8  -0.024381646 0.9759132 0.03030579 0.42109618
-    ## 9   0.002528902 1.0025321 0.02926972 0.93114851
-    ## 10  0.020553574 1.0207663 0.03027494 0.49720299
+    ##           beta        HR    sd_beta          p
+    ## 1   0.01712787 1.0172754 0.02967253 0.56378422
+    ## 2   0.04482319 1.0458429 0.03015969 0.13722750
+    ## 3  -0.01015632 0.9898951 0.02965105 0.73195339
+    ## 4  -0.05948213 0.9422524 0.02872961 0.03841377
+    ## 5  -0.03319776 0.9673472 0.02981357 0.26548878
+    ## 6  -0.02788355 0.9725016 0.02998898 0.35247808
+    ## 7   0.03404424 1.0346304 0.02915228 0.24288462
+    ## 8  -0.02399606 0.9762896 0.02967796 0.41877517
+    ## 9   0.01431639 1.0144194 0.02974818 0.63033693
+    ## 10 -0.01147420 0.9885914 0.02854451 0.68770182
     ## 
     ## $tau
     ## [1] 0.04052206
@@ -617,22 +619,22 @@ containing these two correlation matrices.
     re
 
     ## $beta
-    ## [1] 0.1283255
+    ## [1] 0.1520167
     ## 
     ## $HR
-    ## [1] 1.136923
+    ## [1] 1.16418
     ## 
     ## $sd_beta
-    ## [1] 0.0367129
+    ## [1] 0.03629149
     ## 
     ## $p
-    ## [1] 0.0004733879
+    ## [1] 2.804717e-05
     ## 
     ## $tau
-    ## [1] 0.1261977 0.0001000
+    ## [1] 0.1970068 0.0001000
     ## 
     ## $iter
-    ## [1] 32
+    ## [1] 27
     ## 
     ## $rank
     ## [1] 1000
@@ -641,7 +643,7 @@ containing these two correlation matrices.
     ## [1] 1000
     ## 
     ## $int_ll
-    ## [1] 11078.89
+    ## [1] 11134.42
 
 The sum of these correlation matrices determines which value should be
 specified for `type`. As shown in the above example, because the sum of

@@ -21,7 +21,7 @@ typedef Eigen::MappedSparseMatrix<double> MSpMat;
 //
 // [[Rcpp::export]]
 double logdeth(Eigen::SparseMatrix<double> & A, const Eigen::Map<Eigen::VectorXd> dv, const Eigen::Map<Eigen::VectorXd> bw_v,
-                  const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eigen::VectorXd> cs_p, const Eigen::MatrixXi & v4,
+                  const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eigen::VectorXi> cs_p, const Eigen::Map<Eigen::MatrixXi> & v4,
                   const Eigen::Map<Eigen::VectorXd> a, const Eigen::VectorXd & tau, const Eigen::VectorXi & inv, const Eigen::VectorXi & detap) {
   
   int n = w.size();
@@ -111,7 +111,7 @@ double logdeth(Eigen::SparseMatrix<double> & A, const Eigen::Map<Eigen::VectorXd
 // Different from logdeth, this function calculates two log-determinants
 // [[Rcpp::export]]
 double logdethmcmdense(const Eigen::Map<Eigen::MatrixXd> & A, const Eigen::Map<Eigen::VectorXd> & dv, const Eigen::Map<Eigen::VectorXd> & bw_v,
-               const Eigen::Map<Eigen::VectorXd> & w, const Eigen::Map<Eigen::VectorXd> & cs_p, const Eigen::MatrixXi & v4,
+               const Eigen::Map<Eigen::VectorXd> & w, const Eigen::Map<Eigen::VectorXi> & cs_p, const Eigen::Map<Eigen::MatrixXi> & v4,
                const Eigen::Map<Eigen::VectorXd> & a) {
   
   int n = w.size();
@@ -256,8 +256,8 @@ double logdet_lanczos(const Eigen::Map<Eigen::MatrixXd> & X_m, const Eigen::Map<
 }
 
 // [[Rcpp::export]]
-Eigen::ArrayXXd wma_mv(const Eigen::MatrixXd & X_m, const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::Map<Eigen::VectorXd> & rs_rs, 
-                       const Eigen::Map<Eigen::VectorXd> & rs_cs,const Eigen::Map<Eigen::MatrixXd> & ind, const Eigen::Map<Eigen::VectorXd> & av2,
+Eigen::ArrayXXd wma_mv(const Eigen::MatrixXd & X_m, const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::Map<Eigen::VectorXi> & rs_rs, 
+                       const Eigen::Map<Eigen::VectorXi> & rs_cs,const Eigen::Map<Eigen::MatrixXi> & ind, const Eigen::Map<Eigen::VectorXd> & av2,
                        const int n, const int t) 
 {
   // almost same as csqei, just return an Array
@@ -285,8 +285,8 @@ Eigen::ArrayXXd wma_mv(const Eigen::MatrixXd & X_m, const Eigen::Map<Eigen::Vect
 
 // [[Rcpp::export]]
 double logdet_gkb(const Eigen::Map<Eigen::MatrixXd> & X_m, const Eigen::Map<Eigen::VectorXd> & bw_v, const double & tau, 
-                  const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::Map<Eigen::VectorXd> & rs_rs, 
-                  const Eigen::Map<Eigen::VectorXd> & rs_cs,const Eigen::Map<Eigen::MatrixXd> & ind, const Eigen::Map<Eigen::VectorXd> & av2,
+                  const Eigen::Map<Eigen::VectorXd> & w_v, const Eigen::Map<Eigen::VectorXi> & rs_rs, 
+                  const Eigen::Map<Eigen::VectorXi> & rs_cs,const Eigen::Map<Eigen::MatrixXi> & ind, const Eigen::Map<Eigen::VectorXd> & av2,
                   const Eigen::Map<Eigen::MatrixXd> & rad_m, const Eigen::VectorXi & m_d) {
   
   // GKB for a dense matrix
@@ -330,7 +330,7 @@ double logdet_gkb(const Eigen::Map<Eigen::MatrixXd> & X_m, const Eigen::Map<Eige
   beta.row(0) = beta.row(0).array().sqrt();
   v1 = w.rowwise()*beta.row(0).inverse();
   
-  Eigen::VectorXd iter(t);
+  Eigen::VectorXi iter(t);
   iter.fill(m);
   for(int j=1;j<m;j++)
   {
@@ -543,7 +543,7 @@ double logdet_gkb_dense(const Eigen::Map<Eigen::MatrixXd> & X_m, const Eigen::Ma
   beta.row(0) = beta.row(0).array().sqrt();
   v1 = w.array().rowwise()*beta.row(0).inverse();
   
-  Eigen::VectorXd iter(t);
+  Eigen::VectorXi iter(t);
   iter.fill(m);
   for(int j=1;j<m;j++)
   {

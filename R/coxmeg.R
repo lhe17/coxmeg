@@ -184,9 +184,10 @@ coxmeg <- function(outcome,corr,type,X=NULL,eps=1e-6, min_tau=1e-04,max_tau=5,or
   ## risk set matrix
   ind <- order(outcome[,1])
   ind <- as.matrix(cbind(ind,order(ind)))
-  rk <- rank(outcome[ind[,1],1],ties.method='min')
+  mode(ind) <- "integer"
+  rk <- as.integer(rank(outcome[ind[,1],1],ties.method='min') - 1)
   # n1 <- sum(d_v>0)
-  rs <- rs_sum(rk-1,d_v[ind[,1]])
+  rs <- rs_sum(rk,d_v[ind[,1]])
   
   spsd = FALSE
   if(spd==FALSE)

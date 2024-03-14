@@ -1,4 +1,4 @@
-## ---- message=FALSE, warning=FALSE,echo=FALSE---------------------------------
+## ----message=FALSE, warning=FALSE,echo=FALSE----------------------------------
 # library(knitcitations)
 # cleanbib()
 # options("citation_format" = "pandoc")
@@ -27,7 +27,7 @@ for(i in 1:n_f)
   diag(mat_list[[i]]) <- 1
 }
 sigma = as(bdiag(mat_list),'dgCMatrix')
-
+sigma[1:5,1:5]
 
 ## ----echo=TRUE----------------------------------------------------------------
 n = nrow(sigma)
@@ -40,11 +40,11 @@ cen <- rexp(n, rate = 0.02 )
 ycen <- pmin(y, cen)
 outcome <- cbind(ycen,as.numeric(y <= cen))
 head(outcome)
-sigma[1:5,1:5]
-
 
 ## ----echo=TRUE----------------------------------------------------------------
 re = coxmeg(outcome,sigma,type='bd',X=pred,order=1,detap='diagonal')
+
+## ----echo=TRUE----------------------------------------------------------------
 re
 
 ## ----echo=TRUE----------------------------------------------------------------

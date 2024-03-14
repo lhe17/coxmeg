@@ -22,7 +22,7 @@ vignette: >
 # write.bibtex(file="references.bib")
 ```
 
-# coxmeg 1.1.1
+# coxmeg v1.1.5
 
 ## Overview
 
@@ -104,7 +104,7 @@ In the above result, ```tau``` is the estimated variance component, and ```int_l
 
 We give more details about specifying ```order``` and ```detap```. The argument ```order=1``` (by default) uses the first-order approximation of the inverse Hessian matrix in the optimization, which works well in most general situations (See [@He_2020] for more details). By ```detap='diagonal'```, we tell ```coxmeg``` to use a diagonal approximation to compute the determinant, which is much faster under this setting, when estimating the variance component. By default (```detap='NULL'```), ```coxmeg``` will automatically select a method for computing the determinant based on ```type```, the sample size, and whether the relatedness matrix is symmetric positive definite (SPD).
 
-We compare the results with coxme, which are slightly different due to different approximation of the log-determinant used in the estimation of the variance component. Also, the integrated log-likelihoods cannot be compared directly because different approximation of log-determinant is used.
+Compared to the result from ```coxme```, we see that the results are highly consistent. The slight difference is due to different approximation of the log-determinant used in the estimation of the variance component. Also, the integrated log-likelihoods cannot be compared directly because different approximation of log-determinant is used.
 
 ```{r,echo=TRUE}
 library(coxme)

@@ -1,4 +1,4 @@
-## ---- message=FALSE-----------------------------------------------------------
+## ----message=FALSE------------------------------------------------------------
 library(coxmeg)
 library(gdsfmt)
 library(SNPRelate)
@@ -46,9 +46,9 @@ seqfile <- seqExampleFileName()
 seq <- seqOpen(seqfile)
 
 ## -----------------------------------------------------------------------------
-library(GENESIS)
 if(requireNamespace('GENESIS', quietly = TRUE))
 {
+  library(GENESIS)
   king <- snpgdsIBDKING(seq, verbose=FALSE)
   sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
   sigma[1:5,1:5]
@@ -68,9 +68,12 @@ pheno <- data.frame(family.id, sample.id, time, status,
 head(pheno)
 
 ## -----------------------------------------------------------------------------
-seqSetFilter(seq, variant.sel=1:100)
-re <- coxmeg_gds(seq, pheno, sigma, type='bd')
-head(re$summary)
+if(requireNamespace('GENESIS', quietly = TRUE))
+{
+  seqSetFilter(seq, variant.sel=1:100)
+  re <- coxmeg_gds(seq, pheno, sigma, type='bd')
+  head(re$summary)
+}
 
 ## -----------------------------------------------------------------------------
 seqClose(seq)

@@ -120,7 +120,8 @@ The GRM is a dense matrix and not postive definite, so we set
     ## Solver: PCG (RcppEigen:dense).
 
     ## Warning in check_tau(tau_e, min_tau, max_tau, ncm): The estimated variance
-    ## component equals the lower bound (1e-04), probably suggesting no random effects.
+    ## component equals the lower bound (1e-04), probably suggesting no random
+    ## effects.
 
     ## The variance component is estimated. Start analyzing SNPs...
 
@@ -162,9 +163,9 @@ closely related than second-degree relatives to 0. We multiply the
 matrix by 2 so diagonal elements are 1 rather than 0.5 (the latter is
 the kinship coefficient for identical genomes).
 
-    library(GENESIS)
     if(requireNamespace('GENESIS', quietly = TRUE))
     {
+      library(GENESIS)
       king <- snpgdsIBDKING(seq, verbose=FALSE)
       sigma <- GENESIS::kingToMatrix(king, thresh=0.177) * 2
       sigma[1:5,1:5]
@@ -218,11 +219,14 @@ The SeqArray package allows for pre-selecting variants using the
 `seqSetFilter` function. We set `type='bd'` since `sigma` is a block
 diagonal matrix.
 
-    seqSetFilter(seq, variant.sel=1:100)
+    if(requireNamespace('GENESIS', quietly = TRUE))
+    {
+      seqSetFilter(seq, variant.sel=1:100)
+      re <- coxmeg_gds(seq, pheno, sigma, type='bd')
+      head(re$summary)
+    }
 
     ## # of selected variants: 100
-
-    re <- coxmeg_gds(seq, pheno, sigma, type='bd')
 
     ## There are 90 subjects who have genotype data and have no missing phenotype or covariates.
 
@@ -230,7 +234,9 @@ diagonal matrix.
 
     ## There is/are 0 covariates. The sample size included is 87.
 
-    ## as(<dsCMatrix>, "dgCMatrix") is deprecated since Matrix 1.5-0; do as(., "generalMatrix") instead
+    ## 'as(<dsCMatrix>, "dgCMatrix")' is deprecated.
+    ## Use 'as(., "generalMatrix")' instead.
+    ## See help("Deprecated") and help("Matrix-deprecated").
 
     ## The correlation matrix is treated as sparse/block diagonal.
 
@@ -247,8 +253,6 @@ diagonal matrix.
     ## # of selected variants: 3
 
     ## The order is set to be 2.
-
-    head(re$summary)
 
     ##    snp.id chromosome  position allele      afreq  afreq_inc index       beta
     ## 9       9          1  34435767    G/A 0.85555556 0.85057471     9 -0.4738578

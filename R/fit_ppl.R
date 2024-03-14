@@ -99,6 +99,7 @@ fit_ppl <- function(X,outcome,corr,type,tau,eps=1e-6,order=1,solver=NULL,spd=TRU
   {stop("The option spd=FALSE does not support more than one correlation matrix. If multiple correlation matrices are provided, please make sure that their sum is SPD.")}
   
   X <- as.matrix(X)
+  storage.mode(X) <- 'numeric'
   outcome <- as.matrix(outcome)
   
   if(nrow(outcome)!=nrow(X))
@@ -141,9 +142,9 @@ fit_ppl <- function(X,outcome,corr,type,tau,eps=1e-6,order=1,solver=NULL,spd=TRU
   ## risk set matrix
   ind <- order(outcome[,1])
   ind <- as.matrix(cbind(ind,order(ind)))
-  rk <- rank(outcome[ind[,1],1],ties.method='min')
+  rk <- as.integer(rank(outcome[ind[,1],1],ties.method='min') - 1)
   # n1 <- sum(d_v>0)
-  rs <- rs_sum(rk-1,d_v[ind[,1]])
+  rs <- rs_sum(rk,d_v[ind[,1]])
   
   spsd = FALSE
   if(spd==FALSE)

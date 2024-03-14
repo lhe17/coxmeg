@@ -12,21 +12,21 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // cswei
-Eigen::VectorXd cswei(const Eigen::Map<Eigen::VectorXd> w_v, const Eigen::Map<Eigen::VectorXd> rs_rs, const Eigen::MatrixXi& ind, const Eigen::VectorXd& rev);
+Eigen::VectorXd cswei(const Eigen::Map<Eigen::VectorXd> w_v, const Eigen::Map<Eigen::VectorXi> rs_rs, const Eigen::Map<Eigen::MatrixXi>& ind, const Eigen::VectorXd& rev);
 RcppExport SEXP _coxmeg_cswei(SEXP w_vSEXP, SEXP rs_rsSEXP, SEXP indSEXP, SEXP revSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type w_v(w_vSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type rs_rs(rs_rsSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type ind(indSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi> >::type rs_rs(rs_rsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type ind(indSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type rev(revSEXP);
     rcpp_result_gen = Rcpp::wrap(cswei(w_v, rs_rs, ind, rev));
     return rcpp_result_gen;
 END_RCPP
 }
 // invsph
-Rcpp::List invsph(Eigen::SparseMatrix<double>& A, const Eigen::Map<Eigen::VectorXd>& der, const Eigen::Map<Eigen::VectorXd>& dv, const Eigen::Map<Eigen::VectorXd>& v1, const Eigen::Map<Eigen::MatrixXd>& mx, const Eigen::Map<Eigen::VectorXd>& v2, const Eigen::Map<Eigen::VectorXd>& v3, const Eigen::Map<Eigen::MatrixXd>& v4, const Eigen::Map<Eigen::VectorXd>& av, const Eigen::Map<Eigen::VectorXd>& bw, const Eigen::VectorXd& f, const Eigen::VectorXd& inv, const Eigen::VectorXd& tau, const int sol);
+Rcpp::List invsph(Eigen::SparseMatrix<double>& A, const Eigen::Map<Eigen::VectorXd>& der, const Eigen::Map<Eigen::VectorXd>& dv, const Eigen::Map<Eigen::VectorXd>& v1, const Eigen::Map<Eigen::MatrixXd>& mx, const Eigen::Map<Eigen::VectorXi>& v2, const Eigen::Map<Eigen::VectorXi>& v3, const Eigen::Map<Eigen::MatrixXi>& v4, const Eigen::Map<Eigen::VectorXd>& av, const Eigen::Map<Eigen::VectorXd>& bw, const Eigen::VectorXd& f, const Eigen::VectorXd& inv, const Eigen::VectorXd& tau, const int sol);
 RcppExport SEXP _coxmeg_invsph(SEXP ASEXP, SEXP derSEXP, SEXP dvSEXP, SEXP v1SEXP, SEXP mxSEXP, SEXP v2SEXP, SEXP v3SEXP, SEXP v4SEXP, SEXP avSEXP, SEXP bwSEXP, SEXP fSEXP, SEXP invSEXP, SEXP tauSEXP, SEXP solSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -36,9 +36,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type dv(dvSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type v1(v1SEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type mx(mxSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type v2(v2SEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type v3(v3SEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type v4(v4SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type v2(v2SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type v3(v3SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type v4(v4SEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type av(avSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type bw(bwSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type f(fSEXP);
@@ -50,7 +50,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // logdeth
-double logdeth(Eigen::SparseMatrix<double>& A, const Eigen::Map<Eigen::VectorXd> dv, const Eigen::Map<Eigen::VectorXd> bw_v, const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eigen::VectorXd> cs_p, const Eigen::MatrixXi& v4, const Eigen::Map<Eigen::VectorXd> a, const Eigen::VectorXd& tau, const Eigen::VectorXi& inv, const Eigen::VectorXi& detap);
+double logdeth(Eigen::SparseMatrix<double>& A, const Eigen::Map<Eigen::VectorXd> dv, const Eigen::Map<Eigen::VectorXd> bw_v, const Eigen::Map<Eigen::VectorXd> w, const Eigen::Map<Eigen::VectorXi> cs_p, const Eigen::Map<Eigen::MatrixXi>& v4, const Eigen::Map<Eigen::VectorXd> a, const Eigen::VectorXd& tau, const Eigen::VectorXi& inv, const Eigen::VectorXi& detap);
 RcppExport SEXP _coxmeg_logdeth(SEXP ASEXP, SEXP dvSEXP, SEXP bw_vSEXP, SEXP wSEXP, SEXP cs_pSEXP, SEXP v4SEXP, SEXP aSEXP, SEXP tauSEXP, SEXP invSEXP, SEXP detapSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -59,8 +59,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type dv(dvSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type bw_v(bw_vSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type cs_p(cs_pSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type v4(v4SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi> >::type cs_p(cs_pSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type v4(v4SEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd> >::type a(aSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type inv(invSEXP);
@@ -70,7 +70,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // logdethmcmdense
-double logdethmcmdense(const Eigen::Map<Eigen::MatrixXd>& A, const Eigen::Map<Eigen::VectorXd>& dv, const Eigen::Map<Eigen::VectorXd>& bw_v, const Eigen::Map<Eigen::VectorXd>& w, const Eigen::Map<Eigen::VectorXd>& cs_p, const Eigen::MatrixXi& v4, const Eigen::Map<Eigen::VectorXd>& a);
+double logdethmcmdense(const Eigen::Map<Eigen::MatrixXd>& A, const Eigen::Map<Eigen::VectorXd>& dv, const Eigen::Map<Eigen::VectorXd>& bw_v, const Eigen::Map<Eigen::VectorXd>& w, const Eigen::Map<Eigen::VectorXi>& cs_p, const Eigen::Map<Eigen::MatrixXi>& v4, const Eigen::Map<Eigen::VectorXd>& a);
 RcppExport SEXP _coxmeg_logdethmcmdense(SEXP ASEXP, SEXP dvSEXP, SEXP bw_vSEXP, SEXP wSEXP, SEXP cs_pSEXP, SEXP v4SEXP, SEXP aSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -79,8 +79,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type dv(dvSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type bw_v(bw_vSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type cs_p(cs_pSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type v4(v4SEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type cs_p(cs_pSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type v4(v4SEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type a(aSEXP);
     rcpp_result_gen = Rcpp::wrap(logdethmcmdense(A, dv, bw_v, w, cs_p, v4, a));
     return rcpp_result_gen;
@@ -115,16 +115,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // wma_mv
-Eigen::ArrayXXd wma_mv(const Eigen::MatrixXd& X_m, const Eigen::Map<Eigen::VectorXd>& w_v, const Eigen::Map<Eigen::VectorXd>& rs_rs, const Eigen::Map<Eigen::VectorXd>& rs_cs, const Eigen::Map<Eigen::MatrixXd>& ind, const Eigen::Map<Eigen::VectorXd>& av2, const int n, const int t);
+Eigen::ArrayXXd wma_mv(const Eigen::MatrixXd& X_m, const Eigen::Map<Eigen::VectorXd>& w_v, const Eigen::Map<Eigen::VectorXi>& rs_rs, const Eigen::Map<Eigen::VectorXi>& rs_cs, const Eigen::Map<Eigen::MatrixXi>& ind, const Eigen::Map<Eigen::VectorXd>& av2, const int n, const int t);
 RcppExport SEXP _coxmeg_wma_mv(SEXP X_mSEXP, SEXP w_vSEXP, SEXP rs_rsSEXP, SEXP rs_csSEXP, SEXP indSEXP, SEXP av2SEXP, SEXP nSEXP, SEXP tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_m(X_mSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type w_v(w_vSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_rs(rs_rsSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_cs(rs_csSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type ind(indSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_rs(rs_rsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_cs(rs_csSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type ind(indSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type av2(av2SEXP);
     Rcpp::traits::input_parameter< const int >::type n(nSEXP);
     Rcpp::traits::input_parameter< const int >::type t(tSEXP);
@@ -133,7 +133,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // logdet_gkb
-double logdet_gkb(const Eigen::Map<Eigen::MatrixXd>& X_m, const Eigen::Map<Eigen::VectorXd>& bw_v, const double& tau, const Eigen::Map<Eigen::VectorXd>& w_v, const Eigen::Map<Eigen::VectorXd>& rs_rs, const Eigen::Map<Eigen::VectorXd>& rs_cs, const Eigen::Map<Eigen::MatrixXd>& ind, const Eigen::Map<Eigen::VectorXd>& av2, const Eigen::Map<Eigen::MatrixXd>& rad_m, const Eigen::VectorXi& m_d);
+double logdet_gkb(const Eigen::Map<Eigen::MatrixXd>& X_m, const Eigen::Map<Eigen::VectorXd>& bw_v, const double& tau, const Eigen::Map<Eigen::VectorXd>& w_v, const Eigen::Map<Eigen::VectorXi>& rs_rs, const Eigen::Map<Eigen::VectorXi>& rs_cs, const Eigen::Map<Eigen::MatrixXi>& ind, const Eigen::Map<Eigen::VectorXd>& av2, const Eigen::Map<Eigen::MatrixXd>& rad_m, const Eigen::VectorXi& m_d);
 RcppExport SEXP _coxmeg_logdet_gkb(SEXP X_mSEXP, SEXP bw_vSEXP, SEXP tauSEXP, SEXP w_vSEXP, SEXP rs_rsSEXP, SEXP rs_csSEXP, SEXP indSEXP, SEXP av2SEXP, SEXP rad_mSEXP, SEXP m_dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -142,9 +142,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type bw_v(bw_vSEXP);
     Rcpp::traits::input_parameter< const double& >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type w_v(w_vSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_rs(rs_rsSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_cs(rs_csSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type ind(indSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_rs(rs_rsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_cs(rs_csSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type ind(indSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type av2(av2SEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd>& >::type rad_m(rad_mSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type m_d(m_dSEXP);
@@ -218,41 +218,41 @@ BEGIN_RCPP
 END_RCPP
 }
 // rs_sum
-Rcpp::List rs_sum(const Eigen::VectorXd& rk_v, const Eigen::VectorXd& d);
+Rcpp::List rs_sum(const Eigen::Map<Eigen::VectorXi>& rk_v, const Eigen::Map<Eigen::VectorXd>& d);
 RcppExport SEXP _coxmeg_rs_sum(SEXP rk_vSEXP, SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type rk_v(rk_vSEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rk_v(rk_vSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type d(dSEXP);
     rcpp_result_gen = Rcpp::wrap(rs_sum(rk_v, d));
     return rcpp_result_gen;
 END_RCPP
 }
 // csqei
-Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd>& w_v, const Eigen::MatrixXd& mx, const Eigen::Map<Eigen::VectorXd>& rs_rs, const Eigen::Map<Eigen::VectorXd>& rs_cs, const Eigen::MatrixXi& ind, const Eigen::Map<Eigen::VectorXd>& av);
+Eigen::MatrixXd csqei(const Eigen::Map<Eigen::VectorXd>& w_v, const Eigen::MatrixXd& mx, const Eigen::Map<Eigen::VectorXi>& rs_rs, const Eigen::Map<Eigen::VectorXi>& rs_cs, const Eigen::Map<Eigen::MatrixXi>& ind, const Eigen::Map<Eigen::VectorXd>& av);
 RcppExport SEXP _coxmeg_csqei(SEXP w_vSEXP, SEXP mxSEXP, SEXP rs_rsSEXP, SEXP rs_csSEXP, SEXP indSEXP, SEXP avSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type w_v(w_vSEXP);
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type mx(mxSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_rs(rs_rsSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_cs(rs_csSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type ind(indSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_rs(rs_rsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_cs(rs_csSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type ind(indSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type av(avSEXP);
     rcpp_result_gen = Rcpp::wrap(csqei(w_v, mx, rs_rs, rs_cs, ind, av));
     return rcpp_result_gen;
 END_RCPP
 }
 // wma_cp
-Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd>& w, const Eigen::Map<Eigen::VectorXd>& cs_p, const Eigen::MatrixXi& ind, const Eigen::Map<Eigen::VectorXd>& a);
+Eigen::MatrixXd wma_cp(const Eigen::Map<Eigen::VectorXd>& w, const Eigen::Map<Eigen::VectorXi>& cs_p, const Eigen::MatrixXi& ind, const Eigen::Map<Eigen::VectorXd>& a);
 RcppExport SEXP _coxmeg_wma_cp(SEXP wSEXP, SEXP cs_pSEXP, SEXP indSEXP, SEXP aSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type cs_p(cs_pSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type cs_p(cs_pSEXP);
     Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type ind(indSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type a(aSEXP);
     rcpp_result_gen = Rcpp::wrap(wma_cp(w, cs_p, ind, a));
@@ -260,7 +260,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // score_test
-Eigen::MatrixXd score_test(const Eigen::Map<Eigen::VectorXd>& deriv, const Eigen::Map<Eigen::VectorXd>& bw_v, const Eigen::Map<Eigen::VectorXd>& w, const Eigen::Map<Eigen::VectorXd>& rs_rs, const Eigen::Map<Eigen::VectorXd>& rs_cs, const Eigen::Map<Eigen::VectorXd>& cs_p, const Eigen::MatrixXi& ind, const Eigen::Map<Eigen::VectorXd>& a, const Eigen::Map<Eigen::VectorXd>& a2, const Eigen::VectorXd& tau, const Eigen::Map<Eigen::MatrixXd>& v, const Eigen::MatrixXd& cov, const Eigen::MatrixXd& x);
+Eigen::MatrixXd score_test(const Eigen::Map<Eigen::VectorXd>& deriv, const Eigen::Map<Eigen::VectorXd>& bw_v, const Eigen::Map<Eigen::VectorXd>& w, const Eigen::Map<Eigen::VectorXi>& rs_rs, const Eigen::Map<Eigen::VectorXi>& rs_cs, const Eigen::Map<Eigen::VectorXi>& cs_p, const Eigen::Map<Eigen::MatrixXi>& ind, const Eigen::Map<Eigen::VectorXd>& a, const Eigen::Map<Eigen::VectorXd>& a2, const Eigen::VectorXd& tau, const Eigen::Map<Eigen::MatrixXd>& v, const Eigen::MatrixXd& cov, const Eigen::MatrixXd& x);
 RcppExport SEXP _coxmeg_score_test(SEXP derivSEXP, SEXP bw_vSEXP, SEXP wSEXP, SEXP rs_rsSEXP, SEXP rs_csSEXP, SEXP cs_pSEXP, SEXP indSEXP, SEXP aSEXP, SEXP a2SEXP, SEXP tauSEXP, SEXP vSEXP, SEXP covSEXP, SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -268,10 +268,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type deriv(derivSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type bw_v(bw_vSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_rs(rs_rsSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type rs_cs(rs_csSEXP);
-    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type cs_p(cs_pSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type ind(indSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_rs(rs_rsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type rs_cs(rs_csSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXi>& >::type cs_p(cs_pSEXP);
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXi>& >::type ind(indSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type a(aSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::VectorXd>& >::type a2(a2SEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type tau(tauSEXP);

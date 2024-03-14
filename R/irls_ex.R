@@ -11,8 +11,11 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
   maxiter = 200
   
   ## rs_rs, rs_cs only for c++
-  rs_rs = rs_rs - 1
-  rs_cs = rs_cs - 1
+  rs_rs = as.integer(rs_rs - 1)
+  rs_cs = as.integer(rs_cs - 1)
+  ind_1 = ind - 1
+  mode(ind_1) = 'integer'
+  rs_cs_p_1 = as.integer(rs_cs_p - 1)
   
   u_new <- u
   beta_new <- vi11 <- NULL
@@ -28,7 +31,7 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
   
   w_v <- as.vector(exp(eta_v))
   ## (-1) for cpp
-  s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
+  s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
   
   loglik <- 0
   newloglik <- 0
@@ -46,7 +49,7 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     loglik <- newloglik
     a_v <- d_v/s
     
-    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
+    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind_1,0))
     deriv <- d_v - bw_v
     deriv_full <- c(as.vector(t(X)%*%deriv),deriv)-c(rep(0,n_c),siu)
     
@@ -56,16 +59,16 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     
     if(tau==1)
     {
-      v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
     }else{
-      v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+      v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
     }
     
     diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
     
     if(n_c>0)
     {
-      v[1:n_c,(n_c+1):dim_v] <- t(bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind-1,a_v_2))
+      v[1:n_c,(n_c+1):dim_v] <- t(bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind_1,a_v_2))
       # v[1:n_c,(n_c+1):dim_v] <- t(X)%*%v[brc,brc]
       v[1:n_c,1:n_c] <- v[1:n_c,(n_c+1):dim_v]%*%X
       v[(n_c+1):dim_v,1:n_c] <- t(v[1:n_c,(n_c+1):dim_v])
@@ -87,7 +90,7 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     }
     
     w_v <- as.vector(exp(eta_v))
-    s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
+    s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
     siu <- as.vector(sigma_i_s%*%u_new)/tau
     newloglik <- sum(eta_v[n1_ind]) - sum(log(s)[n1_ind]) - 0.5*t(u_new)%*%siu
     eps_s = eps*(-1)*loglik
@@ -113,7 +116,7 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
       }
       
       w_v <- as.vector(exp(eta_v))
-      s <- as.vector(cswei(w_v,rs_rs,ind-1,1))
+      s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
       siu <- as.vector(sigma_i_s%*%u_new)/tau
       newloglik <- sum(eta_v[n1_ind]) - sum(log(s)[n1_ind]) - 0.5*t(u_new)%*%siu
       lik_dif <- as.numeric(newloglik - loglik)
@@ -132,18 +135,18 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     if(n_c>0)
     {
       a_v <- d_v/s
-      bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
+      bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind_1,0))
       a_v_p <- a_v[ind[,1]]
       a_v_2 <- as.vector(a_v_p*a_v_p)
       a_v_p <- a_v_p[a_v_p>0]
       # hx = as.matrix(v[brc,brc]%*%X)
-      hx = bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind-1,a_v_2)
+      hx = bw_v*X - csqei(w_v,X,rs_rs,rs_cs,ind_1,a_v_2)
       # v[brc,brc] = diag(bw_v) - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)+sigma_i_s
       if(tau==1)
       {
-        v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+        v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
       }else{
-        v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+        v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
       }
       
       diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
@@ -152,7 +155,7 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     }
   }else{
     a_v <- d_v/s
-    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind-1,0))
+    bw_v <- w_v*as.vector(cswei(a_v,rs_cs,ind_1,0))
     
     a_v_p <- a_v[ind[,1]]
     a_v_p <- a_v_p[a_v_p>0]
@@ -161,9 +164,9 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     {
       if(tau==1)
       {
-        v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+        v[brc,brc] = sigma_i_s - wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
       }else{
-        v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p-1,ind-1,a_v_p)
+        v[brc,brc] = sigma_i_s/tau - wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
       }
       
       diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
@@ -174,13 +177,13 @@ irls_ex <- function(beta, u, tau,si_d, sigma_s,sigma_i_s, X, eps=1e-6, d_v, ind,
     }else{
       if(detap=='gkb'){
         a_v_2 <- as.vector(a_v[ind[,1]]*a_v[ind[,1]])
-        logdet = logdet_gkb(sigma_s, bw_v,tau,w_v,rs_rs,rs_cs,ind-1,a_v_2,rad, slqd)/2
+        logdet = logdet_gkb(sigma_s, bw_v,tau,w_v,rs_rs,rs_cs,ind_1,a_v_2,rad, slqd)/2
       }else{
         if(detap %in% c('exact','diagonal'))
         {
-          logdet <- logdeth(as(sigma_i_s,'dgCMatrix'),si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p,tau,1,0)
+          logdet <- logdeth(as(sigma_i_s,'dgCMatrix'),si_d,bw_v, w_v,rs_cs_p_1,ind_1,a_v_p,tau,1,0)
         }else{
-          logdet <- logdethmcmdense(sigma_i_s,si_d,bw_v, w_v,rs_cs_p-1,ind-1,a_v_p)
+          logdet <- logdethmcmdense(sigma_i_s,si_d,bw_v, w_v,rs_cs_p_1,ind_1,a_v_p)
         }
       }
       

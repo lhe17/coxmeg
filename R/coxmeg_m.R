@@ -188,9 +188,10 @@ coxmeg_m <- function(X,outcome,corr,type,cov=NULL,tau=NULL,min_tau=1e-04,max_tau
   ## risk set matrix
   ind <- order(outcome[,1])
   ind <- as.matrix(cbind(ind,order(ind)))
-  rk <- rank(outcome[ind[,1],1],ties.method='min')
+  mode(ind) <- "integer"
+  rk <- as.integer(rank(outcome[ind[,1],1],ties.method='min') - 1)
   # n1 <- sum(d_v>0)
-  rs <- rs_sum(rk-1,d_v[ind[,1]])
+  rs <- rs_sum(rk,d_v[ind[,1]])
   
   spsd = FALSE
   if(spd==FALSE)
@@ -488,20 +489,26 @@ coxmeg_m <- function(X,outcome,corr,type,cov=NULL,tau=NULL,min_tau=1e-04,max_tau
       eta_v <- u
     }
     
+    rs_rs = as.integer(rs$rs_rs - 1)
+    rs_cs = as.integer(rs$rs_cs - 1)
+    ind_1 = ind - 1
+    mode(ind_1) = 'integer'
+    rs_cs_p_1 = as.integer(rs$rs_cs_p - 1)
+    
     w_v <- as.vector(exp(eta_v))
-    s <- as.vector(cswei(w_v,rs$rs_rs-1,ind-1,1))
+    s <- as.vector(cswei(w_v,rs_rs,ind_1,1))
     a_v <- d_v/s
     a_v_p <- a_v[ind[,1]]
     a_v_2 <- as.vector(a_v_p*a_v_p)
     a_v_p <- a_v_p[a_v_p>0]
-    b_v <- as.vector(cswei(a_v,rs$rs_cs-1,ind-1,0))
+    b_v <- as.vector(cswei(a_v,rs_cs,ind_1,0))
     bw_v <- as.vector(w_v)*as.vector(b_v)
     deriv <- d_v - bw_v
     
     dim_v = k + n
     brc = (k+1):dim_v
     v = matrix(NA,dim_v,dim_v)
-    v[brc,brc] = -wma_cp(w_v,rs$rs_cs_p-1,ind-1,a_v_p)
+    v[brc,brc] = -wma_cp(w_v,rs_cs_p_1,ind_1,a_v_p)
     diag(v[brc,brc]) = diag(v[brc,brc]) + bw_v
     if(k>0)
     {
@@ -522,7 +529,7 @@ coxmeg_m <- function(X,outcome,corr,type,cov=NULL,tau=NULL,min_tau=1e-04,max_tau
     
     v = chol(v)
     v = chol2inv(v)
-    t_st <- score_test(deriv,bw_v,w_v,rs$rs_rs-1,rs$rs_cs-1,rs$rs_cs_p-1,ind-1,a_v_p,a_v_2,tau_e,v,cov,as.matrix(X[,snpval]))
+    t_st <- score_test(deriv,bw_v,w_v,rs_rs,rs_cs,rs_cs_p_1,ind_1,a_v_p,a_v_2,tau_e,v,cov,as.matrix(X[,snpval]))
     pv <- pchisq(t_st[,2],1,lower.tail=FALSE)
     
     sumstats <- data.frame(score=rep(NA,p),score_test=rep(NA,p),p=rep(NA,p))

@@ -12,7 +12,7 @@
 // available from R
 //
 // [[Rcpp::export]]
-Rcpp::List rs_sum(const Eigen::VectorXd & rk_v, const Eigen::VectorXd & d) {
+Rcpp::List rs_sum(const Eigen::Map<Eigen::VectorXi> & rk_v, const Eigen::Map<Eigen::VectorXd> & d) {
   
   int n = rk_v.size();
   
