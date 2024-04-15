@@ -102,13 +102,13 @@ the effect of log(HR)=0.1.
     outcome <- cbind(ycen,as.numeric(y <= cen))
     head(outcome)
 
-    ##           ycen  
-    ## [1,] 0.9419918 1
-    ## [2,] 2.9645595 1
-    ## [3,] 0.9127757 1
-    ## [4,] 1.8768276 1
-    ## [5,] 1.5537022 1
-    ## [6,] 3.8630265 1
+    ##          ycen  
+    ## [1,] 3.126438 1
+    ## [2,] 1.294806 1
+    ## [3,] 1.551277 1
+    ## [4,] 1.594265 1
+    ## [5,] 1.402866 1
+    ## [6,] 3.281459 1
 
 We fit a Cox mixed-effects model using the function `coxmeg`.
 
@@ -144,22 +144,22 @@ error indicating sigularity.
     re
 
     ## $beta
-    ## [1] 0.1520123
+    ## [1] 0.1318377
     ## 
     ## $HR
-    ## [1] 1.164175
+    ## [1] 1.140923
     ## 
     ## $sd_beta
-    ## [1] 0.03629015
+    ## [1] 0.03605633
     ## 
     ## $p
-    ## [1] 2.804302e-05
+    ## [1] 0.0002557462
     ## 
     ## $tau
-    ## [1] 0.1970383
+    ## [1] 0.2796959
     ## 
     ## $iter
-    ## [1] 21
+    ## [1] 17
     ## 
     ## $rank
     ## [1] 1000
@@ -168,7 +168,7 @@ error indicating sigularity.
     ## [1] 1000
     ## 
     ## $int_ll
-    ## [1] 11469.22
+    ## [1] 11452.95
 
 In the above result, `tau` is the estimated variance component, and
 `int_ll` is -2\*log(lik) of the integrated/marginal likelihood for
@@ -213,23 +213,23 @@ different approximation of log-determinant is used.
 
     ## Cox mixed-effects model fit by maximum likelihood
     ## 
-    ##   events, n = 942, 1000
-    ##   Iterations= 21 90 
-    ##                     NULL Integrated   Fitted
-    ## Log-likelihood -5581.507  -5567.103 -5425.13
+    ##   events, n = 940, 1000
+    ##   Iterations= 7 34 
+    ##                   NULL Integrated    Fitted
+    ## Log-likelihood -5574.3  -5558.959 -5372.442
     ## 
-    ##                    Chisq    df          p   AIC     BIC
-    ## Integrated loglik  28.81   2.0 5.5464e-07 24.81   15.11
-    ##  Penalized loglik 312.75 130.5 0.0000e+00 51.76 -580.88
+    ##                    Chisq     df          p   AIC     BIC
+    ## Integrated loglik  30.68   2.00 2.1768e-07 26.68   16.99
+    ##  Penalized loglik 403.71 167.19 0.0000e+00 69.33 -740.87
     ## 
     ## Model:  Surv(outcome[, 1], outcome[, 2]) ~ as.matrix(pred) + (1 | as.character(1:n)) 
     ## Fixed coefficients
     ##                     coef exp(coef)   se(coef)    z       p
-    ## as.matrix(pred) 0.152186  1.164377 0.03633758 4.19 2.8e-05
+    ## as.matrix(pred) 0.131905     1.141 0.03608615 3.66 0.00026
     ## 
     ## Random effects
     ##  Group             Variable Std Dev   Variance 
-    ##  as.character.1.n. Vmat.1   0.4461202 0.1990233
+    ##  as.character.1.n. Vmat.1   0.5308919 0.2818462
 
 In GWAS, we may split the procedure into two separate steps, (1)
 estimate the variance component under the null model, and (2) estimate
@@ -253,7 +253,7 @@ component. This can be carried out in the following way.
     tau = re$tau
     print(tau)
 
-    ## [1] 0.1856128
+    ## [1] 0.3000075
 
     re2 = fit_ppl(pred,outcome,sigma,type='bd',tau=tau,order=1)
 
@@ -270,23 +270,23 @@ component. This can be carried out in the following way.
     re2
 
     ## $beta
-    ## [1] 0.1510261
+    ## [1] 0.1324184
     ## 
     ## $HR
-    ## [1] 1.163027
+    ## [1] 1.141586
     ## 
     ## $sd_beta
-    ## [1] 0.0360913
+    ## [1] 0.03632478
     ## 
     ## $p
-    ## [1] 2.857222e-05
+    ## [1] 0.0002669746
     ## 
     ## $iter
-    ## [1] 4
+    ## [1] 5
     ## 
     ## $ppl
-    ##       [,1]
-    ## [1,] -5495
+    ##           [,1]
+    ## [1,] -5451.237
 
 ## Perform GWAS of an age-at-onset phenotype with a sparse relatedness matrix
 
@@ -315,7 +315,7 @@ provided. The temporary file is removed after the analysis is done.
       mat_list[[i]] <- matrix(offd,size[i],size[i])
       diag(mat_list[[i]]) <- 1
     }
-    sigma <- as.matrix(bdiag(mat_list))
+    sigma = as(bdiag(mat_list),'dgCMatrix')
 
     re = coxmeg_plink(pheno,sigma,type='bd',bed=bed,tmp_dir=tempdir(),cov_file=cov,verbose=FALSE)
 
@@ -415,17 +415,17 @@ between 1 and 10 for analyzing the SNPs when `order` is not specified.
     re
 
     ## $summary
-    ##           beta        HR    sd_beta          p
-    ## 1   0.01712787 1.0172754 0.02967253 0.56378422
-    ## 2   0.04482319 1.0458429 0.03015969 0.13722750
-    ## 3  -0.01015632 0.9898951 0.02965105 0.73195339
-    ## 4  -0.05948213 0.9422524 0.02872961 0.03841377
-    ## 5  -0.03319776 0.9673472 0.02981357 0.26548878
-    ## 6  -0.02788355 0.9725016 0.02998898 0.35247808
-    ## 7   0.03404424 1.0346304 0.02915228 0.24288462
-    ## 8  -0.02399606 0.9762896 0.02967796 0.41877517
-    ## 9   0.01431639 1.0144194 0.02974818 0.63033693
-    ## 10 -0.01147420 0.9885914 0.02854451 0.68770182
+    ##            beta        HR    sd_beta          p
+    ## 1   0.042829262 1.0437597 0.02983101 0.15107928
+    ## 2   0.033686492 1.0342603 0.02987255 0.25945771
+    ## 3  -0.006740812 0.9932819 0.02972758 0.82061600
+    ## 4  -0.005908625 0.9941088 0.02944641 0.84096685
+    ## 5   0.013097088 1.0131832 0.02956746 0.65779745
+    ## 6   0.030461280 1.0309300 0.02934913 0.29931954
+    ## 7  -0.050722832 0.9505421 0.02938645 0.08433624
+    ## 8   0.001912065 1.0019139 0.02949737 0.94831608
+    ## 9   0.014422257 1.0145268 0.02959377 0.62601666
+    ## 10 -0.015869634 0.9842556 0.02865265 0.57967282
     ## 
     ## $tau
     ## [1] 0.04052206
@@ -619,22 +619,22 @@ containing these two correlation matrices.
     re
 
     ## $beta
-    ## [1] 0.1520167
+    ## [1] 0.1318458
     ## 
     ## $HR
-    ## [1] 1.16418
+    ## [1] 1.140932
     ## 
     ## $sd_beta
-    ## [1] 0.03629149
+    ## [1] 0.03605801
     ## 
     ## $p
-    ## [1] 2.804717e-05
+    ## [1] 0.000255691
     ## 
     ## $tau
-    ## [1] 0.1970068 0.0001000
+    ## [1] 0.279698 0.000100
     ## 
     ## $iter
-    ## [1] 27
+    ## [1] 33
     ## 
     ## $rank
     ## [1] 1000
@@ -643,7 +643,7 @@ containing these two correlation matrices.
     ## [1] 1000
     ## 
     ## $int_ll
-    ## [1] 11134.42
+    ## [1] 11118.16
 
 The sum of these correlation matrices determines which value should be
 specified for `type`. As shown in the above example, because the sum of

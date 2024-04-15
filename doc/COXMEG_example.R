@@ -80,7 +80,7 @@ for(i in 1:n_f)
   mat_list[[i]] <- matrix(offd,size[i],size[i])
   diag(mat_list[[i]]) <- 1
 }
-sigma <- as.matrix(bdiag(mat_list))
+sigma = as(bdiag(mat_list),'dgCMatrix')
 
 re = coxmeg_plink(pheno,sigma,type='bd',bed=bed,tmp_dir=tempdir(),cov_file=cov,verbose=FALSE)
 re
